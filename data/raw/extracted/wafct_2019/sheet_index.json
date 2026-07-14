@@ -1,0 +1,104 @@
+{
+  "source_file": "WAFCT_2019.xlsx",
+  "source_sha256": "bca8e44f7a41fdd538998d9e31849ed26af4703ddb5a451803d73a2d9532cc85",
+  "ingested_at_utc": "2026-07-14T12:02:19Z",
+  "script_version": "3.0.0",
+  "sheets": [
+    {
+      "sheet_position": 0,
+      "sheet_name": "01 Introduction",
+      "parquet_file": "01_introduction.parquet",
+      "parquet_sha256": "e70891a2cded8b310da5a5724d2462fed28b6119108497808a684ed9ad459643",
+      "rows": 26,
+      "cols": 4
+    },
+    {
+      "sheet_position": 1,
+      "sheet_name": "02 Components",
+      "parquet_file": "02_components.parquet",
+      "parquet_sha256": "729d855ec85b4ddb34153e4776176b46330db9b2178c893027ad71c6abc6ea59",
+      "rows": 60,
+      "cols": 10
+    },
+    {
+      "sheet_position": 2,
+      "sheet_name": "03 NV_sum_39 (per 100g EP)",
+      "parquet_file": "03_nv_sum_39_per_100g_ep.parquet",
+      "parquet_sha256": "8a39543c27c5ce84051f6887c448866013ba8c27351e2358820ca549f2fba0c9",
+      "rows": 1058,
+      "cols": 45
+    },
+    {
+      "sheet_position": 3,
+      "sheet_name": "04 NV_stat_39 (per 100g EP)",
+      "parquet_file": "04_nv_stat_39_per_100g_ep.parquet",
+      "parquet_sha256": "8015e6b092d10b6b57a99dab52af1d493d881c0a3b42c9707b812a05db8855f0",
+      "rows": 3812,
+      "cols": 45
+    },
+    {
+      "sheet_position": 4,
+      "sheet_name": "05 NV_sum_57 (per 100g EP)",
+      "parquet_file": "05_nv_sum_57_per_100g_ep.parquet",
+      "parquet_sha256": "8fe38d6ff55049eb2bad79ddbefaae52b615a7d219e7c6741463adcbbe4d7bc5",
+      "rows": 1058,
+      "cols": 63
+    },
+    {
+      "sheet_position": 5,
+      "sheet_name": "06 NV_stat_57 (per 100g EP)",
+      "parquet_file": "06_nv_stat_57_per_100g_ep.parquet",
+      "parquet_sha256": "d574bada8728bde4a5158708e85365075e10af046881fa2c5682e1dac4954b5a",
+      "rows": 3812,
+      "cols": 63
+    },
+    {
+      "sheet_position": 6,
+      "sheet_name": "07 Yield factors, sing_ing",
+      "parquet_file": "07_yield_factors_sing_ing.parquet",
+      "parquet_sha256": "b26db78a7e7bf499d75939db114f68057bcc2853aeb799002df9ea0b16f8f8ff",
+      "rows": 448,
+      "cols": 5
+    },
+    {
+      "sheet_position": 7,
+      "sheet_name": "08 Retention factors",
+      "parquet_file": "08_retention_factors.parquet",
+      "parquet_sha256": "074c7e9d09cb1dc0ecd7228abce934ce7cd6fdbc05463cba865029254f5f131a",
+      "rows": 74,
+      "cols": 24
+    },
+    {
+      "sheet_position": 8,
+      "sheet_name": "09 Mixed dishes",
+      "parquet_file": "09_mixed_dishes.parquet",
+      "parquet_sha256": "be43aa340711e9da8228cec19449a3c54c61a0ef8016942e4b820b3f8a7c96c4",
+      "rows": 1714,
+      "cols": 8
+    },
+    {
+      "sheet_position": 9,
+      "sheet_name": "10 FoodEx2 codes",
+      "parquet_file": "10_foodex2_codes.parquet",
+      "parquet_sha256": "f7f6e1752d0f9270fbf687c14ef1a45a8d50fa019b15481d7e2c406c3db609a5",
+      "rows": 1030,
+      "cols": 9
+    },
+    {
+      "sheet_position": 10,
+      "sheet_name": "11 2012 vs 2019 names and codes",
+      "parquet_file": "11_2012_vs_2019_names_and_codes.parquet",
+      "parquet_sha256": "d4585ff207d42383e286a7d7f1f2a2ccf34d33322278ab990799531ba1fafaf9",
+      "rows": 491,
+      "cols": 6
+    },
+    {
+      "sheet_position": 11,
+      "sheet_name": "12 Data sources with BiblioID",
+      "parquet_file": "12_data_sources_with_biblioid.parquet",
+      "parquet_sha256": "7350e8791ddb37c370bece9d8b09e4eb323143332645e23f5b9c1aad018cdf0d",
+      "rows": 468,
+      "cols": 2
+    }
+  ]
+}

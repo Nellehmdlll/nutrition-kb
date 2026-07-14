@@ -1,0 +1,4 @@
+# src/nutrition_kb/ingest/raw.py
+pandas==3.0.2
+pyarrow==23.0.1
+openpyxl==3.1.5

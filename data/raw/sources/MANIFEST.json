@@ -1,0 +1,20 @@
+[
+  {
+    "name": "EDITION  ET  VULGARISATION  D’UNE  TABLE  DE  COMPOSITION DES.pdf",
+    "sha256": "234acad9eb46fbac7cf3f37b73e7a3bd8dc8fc31a299627bd3ea748c5bf317da",
+    "size_bytes": 665645,
+    "ingestion_date_utc": "2026-07-14T10:14:42Z",
+    "source_url": null,
+    "license": null,
+    "script_version": "3.0.0"
+  },
+  {
+    "name": "WAFCT_2019.xlsx",
+    "sha256": "bca8e44f7a41fdd538998d9e31849ed26af4703ddb5a451803d73a2d9532cc85",
+    "size_bytes": 3060230,
+    "ingestion_date_utc": "2026-07-14T10:14:42Z",
+    "source_url": null,
+    "license": null,
+    "script_version": "3.0.0"
+  }
+]

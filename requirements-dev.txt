@@ -1,0 +1,2 @@
+# outils de developpement/verification (pas necessaires pour lancer l'ingestion)
+pytest==9.1.1
