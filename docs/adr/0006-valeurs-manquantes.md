@@ -1,97 +1,95 @@
-# ADR 0006 — Valeurs manquantes : calculer avec un défaut, transporter l'imperfection
+# ADR 0006 — Valeurs manquantes : combler seulement si un défaut est démontrablement sûr, sinon exposer le manque
 
-- **Statut** : Accepté
-- **Date** : 2026-07-15
-- **Décideurs** : l'équipe (Sawadogo Rahimah. + mentor technique IA)
+- **Statut** : Accepté — **révisé le 2026-07-15** (v2)
+- **Date initiale** : 2026-07-15
+- **Décideurs** : l'équipe (Sawadogo Rahimah + mentor technique)
 - **Portée** : couche gold, vues destinées à l'application et au RAG
+- **Historique** :
+  - v1 — « calculer avec un défaut sûr + drapeau » (cas déclencheur : fibres/diabète)
+  - v2 — révision après le cas ratio Na/K : un défaut sûr n'existe pas toujours ;
+    ajout de la règle de décision explicite et de la distinction entre les raisons
+    d'un résultat manquant.
 
 ---
 
 ## Contexte
 
-La source (FAO/INFOODS WAFCT 2019) est incomplète par endroits. Trois formes
-d'imperfection coexistent, déjà modélisées en couche silver :
+La source (FAO/INFOODS WAFCT 2019) est incomplète par endroits. La couche gold
+produit des grandeurs **calculées** pour l'application, dont un opérande peut être
+manquant. Deux cas concrets ont éprouvé la règle :
 
-- `TRACE` — présent mais non quantifié (`value IS NULL`)
-- `NOT_DETERMINED` — jamais mesuré (absence de ligne dans `food_value`)
-- `NON_AFRICAN` — mesuré, mais sur un échantillon non africain
+1. **Fibres (diabète)** — une soustraction. Fibre manquante → combler par 0
+   **surestime** le sucre effectif : erreur dans le sens sûr pour le patient.
+2. **Ratio Na/K (hypertension)** — une division. Potassium manquant → aucune
+   valeur de remplacement n'est sûre : 0 fait exploser le ratio (faux positif),
+   une valeur haute masque le danger (faux négatif). **Pas de défaut sûr.**
 
-La couche gold doit produire des grandeurs **calculées** pour l'application —
-par exemple les glucides nets = glucides disponibles − fibres. Or un opérande
-peut être manquant. Le cas déclencheur : `net_carbs = CHOAVLDF − FIBTG`, quand
-`FIBTG` est `NOT_DETERMINED`.
+La v1 de cet ADR supposait implicitement qu'un défaut sûr existe toujours. Le
+cas 2 prouve que non. D'où cette révision.
 
-## Problème
+## Décision (v2)
 
-Deux réflexes naïfs, tous deux dangereux dans un contexte de santé :
+**On ne comble une valeur manquante QUE si l'on peut démontrer que l'erreur
+introduite va dans le sens sûr pour le patient. Si aucun défaut n'est
+démontrablement sûr, on NE calcule PAS : on expose le manque.**
 
-1. **Laisser le calcul à NULL** (`x − NULL = NULL`). L'aliment disparaît de
-   l'affichage. L'utilisateur ne voit rien — non pas parce que l'aliment est
-   inintéressant, mais parce que NOTRE donnée est incomplète. On punit
-   l'utilisateur de nos trous.
+Arbre de décision, à appliquer à chaque grandeur dérivée :
 
-2. **Remplacer le manquant par une valeur par défaut et l'oublier**
-   (`x − COALESCE(FIBTG, 0)`). L'aliment s'affiche avec un chiffre, mais ce
-   chiffre est présenté comme s'il était complet. Si les fibres réelles valaient
-   50 g, on surestime gravement les glucides nets — et on ment par omission.
+```
+Un opérande peut-il être manquant ?
+├── NON  → calcul direct.
+└── OUI  → existe-t-il une valeur de remplacement dont l'erreur va, de façon
+           DÉMONTRABLE, dans le sens sûr pour le patient ?
+           ├── OUI → calculer avec ce défaut + exposer un DRAPEAU d'hypothèse
+           │         (cas fibres : défaut 0, drapeau fiber_is_assumed_zero).
+           └── NON → NE PAS calculer. Résultat = NULL + exposer la RAISON
+                     (cas Na/K : ratio_unavailable_reason).
+```
 
-## Décision
+### Distinguer les raisons d'un résultat manquant
 
-**On calcule toujours avec un défaut explicite, ET on transporte l'imperfection
-dans une colonne séparée, jusqu'à l'utilisateur final.**
+Un résultat `NULL` n'est jamais livré nu. On distingue POURQUOI il est nul, car
+les causes n'ont pas le même sens médical ni le même message utilisateur :
 
-Concrètement, toute grandeur dérivée d'un opérande potentiellement manquant
-produit TROIS sorties, jamais une seule :
+- **opérande NON DÉTERMINÉ** (jamais mesuré) → « donnée non mesurée »
+- **opérande MESURÉ À ZÉRO** (valeur réelle 0, ex. K=0 dans un produit raffiné)
+  → « aliment sans <nutriment> » ; le ratio est mathématiquement non défini,
+  pas inconnu.
 
-| Sortie | Rôle | Exemple |
-|---|---|---|
-| la valeur brute de l'opérande | vérité de la source, **NULL préservé** | `fiber_g` (NULL si inconnu) |
-| la grandeur calculée avec défaut | l'app voit toujours un chiffre | `net_carbs_g` |
-| un drapeau booléen | signale que le défaut a été appliqué | `fiber_is_assumed_zero` |
+C'est la même distinction que `NOT_DETERMINED` vs `TRACE` en couche silver :
+« on ne sait pas » ≠ « on sait que c'est zéro ». Elle se propage jusqu'à la gold.
 
-Le choix du **sens du défaut** suit une règle fixe :
+### Le sens du défaut reste à prouver au cas par cas
 
-> Quand une valeur par défaut est inévitable, choisir celle dont l'erreur va
-> dans le **sens sûr** pour le patient.
-
-Pour les fibres et le diabète : les fibres se soustraient, donc `fibres = 0`
-**surestime** les glucides nets. Surestimer le sucre effectif est prudent
-(le diabétique évite ou dose vers le haut). Le défaut `0` est donc le sens sûr.
-Ce raisonnement doit être refait pour chaque nouvelle grandeur — il ne se
-généralise pas aveuglément.
+Quand un défaut sûr existe, son sens ne se généralise pas mécaniquement. Il se
+démontre pour chaque grandeur :
+- soustraction d'un composant favorable (fibres) → défaut 0 surestime le risque
+  = sens sûr.
+- ce raisonnement est FAUX pour une division, une moyenne, ou tout composant
+  dont l'absence n'a pas d'effet monotone connu sur le risque.
 
 ## Conséquences
 
 **Positives**
-- L'utilisateur voit toujours une information exploitable (pas de trou muet).
-- La vérité brute de la source est préservée (`NULL`) : une donnée corrigée
-  dans 6 mois s'intègre sans réécrire l'historique ni le calcul.
-- L'assistant IA peut formuler une réponse honnête : « environ X g de glucides
-  nets — teneur en fibres inconnue, valeur probablement surestimée ».
-- Cohérent avec les décisions déjà prises sur `TRACE` (ADR sur value.py) et sur
-  `provenance` : même principe unificateur — **calculer au mieux, transporter
-  l'imperfection à côté**.
+- L'app ne fabrique jamais de faux positif par division (le cas `80 / 0`).
+- Chaque `NULL` porte sa raison : l'assistant peut l'expliquer au lieu d'afficher
+  une case vide qui ressemble à un bug.
+- Règle unificatrice cohérente avec `TRACE`/`NOT_DETERMINED` (silver) et
+  `provenance` : à chaque niveau, on calcule au mieux ET on transporte
+  l'imperfection à côté.
 
 **Négatives / coûts**
-- Chaque grandeur dérivée coûte 2 à 3 colonnes au lieu d'1. Les vues gold sont
-  plus larges.
-- L'app ET le RAG doivent effectivement LIRE les drapeaux et les afficher.
-  Un drapeau ignoré en aval annule tout le bénéfice : la responsabilité se
-  déplace vers la couche présentation, elle ne disparaît pas.
-- Un défaut « sûr » reste un choix discutable au cas par cas ; il doit être
-  documenté pour chaque grandeur, pas appliqué mécaniquement.
-
-## Portée d'application
-
-Cette politique s'applique à TOUTE grandeur calculée en gold à partir d'un
-opérande pouvant être `NULL` / `NOT_DETERMINED` / `TRACE`. Toute nouvelle vue
-dérivée doit exposer ses drapeaux d'hypothèse.
+- Certaines grandeurs sont `NULL` là où l'utilisateur aimerait un chiffre. C'est
+  assumé : mieux vaut « indisponible, voici pourquoi » qu'un chiffre faux.
+- Chaque grandeur dérivée coûte des colonnes supplémentaires (drapeau OU raison).
+- L'app ET le RAG doivent LIRE ces colonnes et les afficher, sinon le bénéfice
+  est annulé. La responsabilité se déplace vers la présentation, ne disparaît pas.
 
 ## Alternatives écartées
 
-- **Imputation statistique** (remplacer le manquant par la moyenne du groupe
-  d'aliments) : inventerait une donnée plausible mais fausse, indistinguable
-  d'une vraie mesure. Contraire au principe de traçabilité du projet. Écartée.
-- **Exclure les aliments à opérande manquant** : ampute le catalogue, et
-  précisément sur les aliments les moins documentés — souvent les aliments
-  locaux, ceux qui font la valeur du projet. Écartée.
+- **Toujours combler avec un défaut** (v1 appliquée aveuglément) : produit des
+  faux positifs sur les divisions. Écartée — c'est précisément ce que la v2 corrige.
+- **Toujours laisser NULL dès qu'un opérande manque** : perdrait le cas fibres,
+  où combler avec 0 est démontrablement sûr et garde l'aliment exploitable. Écartée.
+- **Imputation statistique** (moyenne du groupe) : invente une donnée
+  indistinguable d'une vraie mesure. Contraire à la traçabilité. Écartée.
