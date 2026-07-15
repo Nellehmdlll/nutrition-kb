@@ -5,7 +5,22 @@
 --  on n'invente jamais de potassium.
 -- ============================================================================
 
-CREATE OR REPLACE VIEW gold.v_food_hypertension AS
+-- sodium_status / potassium_status : necessaires pour que le rendu texte (RAG)
+-- puisse dire "valeur estimee" quand status = ESTIMATED. Meme patron que
+-- gold.nutrient() et gold.nutrient_provenance().
+CREATE OR REPLACE FUNCTION gold.nutrient_status(p_food TEXT, p_tag TEXT, p_unit TEXT)
+RETURNS TEXT
+LANGUAGE sql STABLE AS $$
+    SELECT status::TEXT
+    FROM kb.food_value
+    WHERE food_code = p_food AND tagname = p_tag AND unit = p_unit
+$$;
+
+-- CREATE OR REPLACE ne peut pas reordonner/inserer des colonnes au milieu
+-- d'une vue existante (uniquement en ajouter a la fin) -> DROP explicite.
+DROP VIEW IF EXISTS gold.v_food_hypertension;
+
+CREATE VIEW gold.v_food_hypertension AS
 WITH nk AS (
     SELECT
         b.food_code,
@@ -15,6 +30,8 @@ WITH nk AS (
         b.is_recipe_based,
         gold.nutrient(b.food_code, 'NA', 'mg')            AS sodium_mg,
         gold.nutrient(b.food_code, 'K',  'mg')            AS potassium_mg,
+        gold.nutrient_status(b.food_code, 'NA', 'mg')     AS sodium_status,
+        gold.nutrient_status(b.food_code, 'K',  'mg')     AS potassium_status,
         gold.nutrient_provenance(b.food_code, 'NA', 'mg') AS sodium_provenance,
         gold.nutrient_provenance(b.food_code, 'K',  'mg') AS potassium_provenance
     FROM gold.v_food_base b
@@ -26,6 +43,8 @@ SELECT
     energy_kcal,
     sodium_mg,
     potassium_mg,
+    sodium_status,
+    potassium_status,
 
     -- La provenance du SODIUM est ici une information de premier plan :
     -- 167 aliments sur 1028 ont un sodium d'origine NON africaine. Le sel
