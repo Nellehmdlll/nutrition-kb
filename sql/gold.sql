@@ -6,9 +6,10 @@
 CREATE SCHEMA IF NOT EXISTS gold;
 
 -- ---------------------------------------------------------------------------
---  Fonction utilitaire : récupérer UNE valeur nutritionnelle d'un aliment.
---  Évite de répéter le motif LEFT JOIN food_value ... AND tagname=... partout.
---  SQL scalaire, inlinée par PostgreSQL -> pas de coût par appel.
+--  Fonctions utilitaires : récupérer UNE valeur/statut/provenance nutritionnelle
+--  d'un aliment. Évite de répéter le motif LEFT JOIN food_value ... AND
+--  tagname=... partout. SQL scalaire, inliné par PostgreSQL -> pas de coût
+--  par appel.
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION gold.nutrient(p_food TEXT, p_tag TEXT, p_unit TEXT)
@@ -27,11 +28,26 @@ LANGUAGE sql STABLE AS $$
     WHERE food_code = p_food AND tagname = p_tag AND unit = p_unit
 $$;
 
+-- Nécessaire pour que le rendu texte (RAG) puisse dire "valeur estimée"
+-- quand status = ESTIMATED, nutriment par nutriment.
+CREATE OR REPLACE FUNCTION gold.nutrient_status(p_food TEXT, p_tag TEXT, p_unit TEXT)
+RETURNS TEXT
+LANGUAGE sql STABLE AS $$
+    SELECT status::TEXT
+    FROM kb.food_value
+    WHERE food_code = p_food AND tagname = p_tag AND unit = p_unit
+$$;
+
 
 -- ---------------------------------------------------------------------------
 --  1. VUE DE BASE — l'identité + les macros, commune à toutes les pathologies
 -- ---------------------------------------------------------------------------
 --  Toute vue pathologie l'étend, pour ne pas dupliquer nom/catégorie/énergie.
+--  Porte aussi le statut/provenance PAR macro-nutriment (même rigueur que
+--  Na/K en hypertension) et les alias locaux (mooré...) -- vides tant que
+--  food_alias n'est pas apparié à BF2005, mais la colonne existe déjà : le
+--  jour où l'appariement est fait, tous les chunks deviennent cherchables
+--  dans la langue locale sans toucher une ligne de SQL ni de Python.
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE VIEW gold.v_food_base AS
@@ -44,9 +60,29 @@ SELECT
     gold.nutrient(f.food_code, 'ENERC', 'kcal') AS energy_kcal,
     gold.nutrient(f.food_code, 'PROTCNT', 'g') AS protein_g,
     gold.nutrient(f.food_code, 'FAT', 'g')     AS fat_g,
-    gold.nutrient(f.food_code, 'CHOAVLDF', 'g') AS carb_available_g
+    gold.nutrient(f.food_code, 'CHOAVLDF', 'g') AS carb_available_g,
+
+    -- statut/provenance par macro-nutriment
+    gold.nutrient_status(f.food_code, 'ENERC', 'kcal')     AS energy_status,
+    gold.nutrient_provenance(f.food_code, 'ENERC', 'kcal') AS energy_provenance,
+    gold.nutrient_status(f.food_code, 'PROTCNT', 'g')      AS protein_status,
+    gold.nutrient_provenance(f.food_code, 'PROTCNT', 'g')  AS protein_provenance,
+    gold.nutrient_status(f.food_code, 'FAT', 'g')          AS fat_status,
+    gold.nutrient_provenance(f.food_code, 'FAT', 'g')      AS fat_provenance,
+    gold.nutrient_status(f.food_code, 'CHOAVLDF', 'g')     AS carb_available_status,
+    gold.nutrient_provenance(f.food_code, 'CHOAVLDF', 'g') AS carb_available_provenance,
+
+    -- noms locaux (mooré, dioula...) une fois food_alias apparié à BF2005.
+    -- Vide/NULL aujourd'hui -- réservé, pas actif.
+    al.aliases
+
 FROM kb.food f
-JOIN kb.food_category fc ON fc.category_id = f.category_id;
+JOIN kb.food_category fc ON fc.category_id = f.category_id
+LEFT JOIN LATERAL (
+    SELECT array_agg(DISTINCT alias || ' (' || lang || ')') AS aliases
+    FROM kb.food_alias fa
+    WHERE fa.food_code = f.food_code
+) al ON true;
 
 
 -- ---------------------------------------------------------------------------
@@ -83,7 +119,18 @@ SELECT
         b.carb_available_g / NULLIF(b.energy_kcal, 0) * 100, 1
     )                                         AS carbs_per_100kcal,
 
-    b.is_recipe_based
+    b.is_recipe_based,
+
+    -- statut/provenance des glucides disponibles et de l'énergie (déjà portés par la base)
+    b.carb_available_status                    AS glycemic_carbs_status,
+    b.carb_available_provenance                AS glycemic_carbs_provenance,
+    b.energy_status,
+    b.energy_provenance,
+    -- statut/provenance des fibres, propres à cette vue (pas dans la base)
+    gold.nutrient_status(b.food_code, 'FIBTG', 'g')     AS fiber_status,
+    gold.nutrient_provenance(b.food_code, 'FIBTG', 'g') AS fiber_provenance,
+
+    b.aliases
 FROM gold.v_food_base b;
 
 

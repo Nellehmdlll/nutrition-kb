@@ -5,16 +5,8 @@
 --  on n'invente jamais de potassium.
 -- ============================================================================
 
--- sodium_status / potassium_status : necessaires pour que le rendu texte (RAG)
--- puisse dire "valeur estimee" quand status = ESTIMATED. Meme patron que
--- gold.nutrient() et gold.nutrient_provenance().
-CREATE OR REPLACE FUNCTION gold.nutrient_status(p_food TEXT, p_tag TEXT, p_unit TEXT)
-RETURNS TEXT
-LANGUAGE sql STABLE AS $$
-    SELECT status::TEXT
-    FROM kb.food_value
-    WHERE food_code = p_food AND tagname = p_tag AND unit = p_unit
-$$;
+-- gold.nutrient_status() vit dans gold.sql (fonction utilitaire partagée par
+-- toutes les vues gold, pas propre à l'hypertension).
 
 -- CREATE OR REPLACE ne peut pas reordonner/inserer des colonnes au milieu
 -- d'une vue existante (uniquement en ajouter a la fin) -> DROP explicite.
@@ -33,7 +25,8 @@ WITH nk AS (
         gold.nutrient_status(b.food_code, 'NA', 'mg')     AS sodium_status,
         gold.nutrient_status(b.food_code, 'K',  'mg')     AS potassium_status,
         gold.nutrient_provenance(b.food_code, 'NA', 'mg') AS sodium_provenance,
-        gold.nutrient_provenance(b.food_code, 'K',  'mg') AS potassium_provenance
+        gold.nutrient_provenance(b.food_code, 'K',  'mg') AS potassium_provenance,
+        b.aliases
     FROM gold.v_food_base b
 )
 SELECT
@@ -74,7 +67,8 @@ SELECT
         ELSE NULL  -- ratio calculé normalement
     END                                            AS ratio_unavailable_reason,
 
-    is_recipe_based
+    is_recipe_based,
+    aliases
 FROM nk;
 
 
