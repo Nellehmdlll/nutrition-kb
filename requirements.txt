@@ -5,3 +5,7 @@ openpyxl==3.1.5
 
 # src/nutrition_kb/load/postgres.py
 psycopg2==2.9.12
+
+# src/nutrition_kb/rag/embed_chunks.py
+sentence-transformers==5.6.0
+pgvector==0.5.0
