@@ -1,0 +1,434 @@
+Vocabulaire food_keyword -- propose a partir de 1028 noms (food.name_fr)
+Tokens uniques : 663  |  gardes : 365  |  retires : 309  |  ambigus : 0
+
+==============================================================================
+CONTROLE DE COLLISION avec kb.nutrient_synonym
+==============================================================================
+  OK : aucun des 8 synonymes de nutriment (calories, energie, fibres, glucides, potassium, sel, sodium, sucre) n'est present dans food_keyword.
+
+==============================================================================
+CORRECTIONS MANUELLES APPLIQUEES (triangulation, 11 ajouts / 46 retraits)
+==============================================================================
+  Ajoutes : ['amarante', 'betterave', 'celeri', 'champignon', 'courgette', 'datte', 'fraise', 'kapok', 'raisin', 'salade', 'silure']
+  Retires : ['allongees', 'base', 'ben', 'bix', 'casse', 'conservation', 'corps', 'cou', 'dmr', 'doux', 'dure', 'enfants', 'esr', 'faux', 'grande', 'humide', 'ikmp', 'ikmv', 'intro', 'jl', 'kam', 'ki', 'locale', 'longue', 'mix', 'molle', 'nature', 'naturel', 'nin', 'oko', 'petit', 'petites', 'plates', 'preparee', 'preparees', 'pure', 'race', 'sec', 'simple', 'special', 'spp', 'sr', 'super', 'trois', 'tzpb', 'uniquement']
+  Demandes en retrait mais deja absents des gardes (rien a faire) : ['b']
+
+==============================================================================
+ROUND 2 -- resolution des ambigus + nouveau bruit (77 retires)
+==============================================================================
+  Ambigus GARDES  : ['son']
+  Ambigus RETIRES : ['est', 'mat', 'vand']
+  Retires (round 2) : ['abuja', 'akoko', 'amara', 'amer', 'ameres', 'aretes', 'baraand', 'bite', 'chair', 'chandelle', 'chika', 'chinoise', 'coque', 'cuisson', 'datou', 'decoloree', 'douces', 'eaux', 'eindo', 'epaisse', 'europeenne', 'fetide', 'filet', 'fornio', 'gbaeve', 'giwa', 'gnon', 'gnonli', 'goine', 'gougba', 'indigene', 'isu', 'kaam', 'kaman', 'kanss', 'kiou', 'kmaan', 'koeeg', 'koeg', 'koeng', 'koing', 'koko', 'kou', 'koum', 'kui', 'kundu', 'maan', 'maane', 'maas', 'maass', 'maasse', 'manipintar', 'moomd', 'naagdme', 'oeil', 'peau', 'peeleg', 'pele', 'pepa', 'pesgo', 'pinces', 'plante', 'poza', 'rica', 'rose', 'rougougdga', 'sauvage', 'siikam', 'sine', 'sinkarzie', 'sucree', 'tchobal', 'terre', 'tigree', 'toeg', 'veloute', 'wesln']
+  Demandes en retrait mais deja absents des gardes (rien a faire) : ['corps', 'molle', 'oko']
+  Garde explicite verifiee (connaissance terrain) : 35 mots, tous presents.
+
+==============================================================================
+MOTS AMBIGUS RESTANTS -- a trancher explicitement (0)
+==============================================================================
+  (aucun -- tous resolus)
+
+==============================================================================
+MOTS RETIRES (309), par raison
+==============================================================================
+
+--- ambigu, tranche par l'utilisateur (fragment, probablement un mot en langue locale non identifie (5)) (1) ---
+vand(5)
+
+--- ambigu, tranche par l'utilisateur (sens peu clair hors contexte, frequence non negligeable (5)) (1) ---
+mat(5)
+
+--- ambigu, tranche par l'utilisateur (verbe 'etre' (grammaire) le plus souvent, mais confirmer) (1) ---
+est(4)
+
+--- bruit residuel (triangulation manuelle) (46) ---
+sec(43), ikmp(13), petit(9), special(8), super(8), pure(6), casse(6), nature(5), faux(5), humide(4), corps(4), ben(4), nin(3), grande(3), ki(3), trois(3), locale(2), doux(2), petites(2), race(2), sr(2), simple(1), plates(1), bix(1), enfants(1), molle(1), jl(1), cou(1), tzpb(1), ikmv(1), dure(1), intro(1), esr(1), oko(1), preparee(1), base(1), kam(1), dmr(1), spp(1), allongees(1), naturel(1), longue(1), conservation(1), mix(1), uniquement(1), preparees(1)
+
+--- bruit residuel (triangulation manuelle, round 2) (77) ---
+chair(77), filet(76), eaux(44), cuisson(38), chandelle(31), peau(20), terre(11), epaisse(11), indigene(9), sauvage(8), fetide(6), kou(6), veloute(5), oeil(5), plante(4), pinces(4), tigree(4), rougougdga(4), baraand(4), ameres(3), douces(3), koum(3), isu(3), decoloree(3), maan(3), amer(2), rose(2), sucree(2), moomd(2), peeleg(2), koeg(2), kanss(2), toeg(2), europeenne(2), kiou(2), kmaan(1), maasse(1), chika(1), sinkarzie(1), abuja(1), poza(1), fornio(1), koeng(1), chinoise(1), maane(1), coque(1), manipintar(1), pele(1), wesln(1), eindo(1), amara(1), bite(1), kaman(1), kui(1), gbaeve(1), pepa(1), kaam(1), gougba(1), gnonli(1), datou(1), naagdme(1), aretes(1), goine(1), koing(1), kundu(1), maas(1), pesgo(1), rica(1), sine(1), gnon(1), koko(1), siikam(1), tchobal(1), akoko(1), giwa(1), koeeg(1), maass(1)
+
+--- fragment (1 lettre) (1) ---
+b(25)
+
+--- grammatical (26) ---
+de(605), sans(339), avec(111), a(111), et(102), non(100), d(98), en(87), ni(53), dans(50), la(47), n(41), ne(16), l(16), du(15), au(10), ou(6), ex(4), aux(3), pour(2), w(1), f(1), qui(1), rit(1), er(1), e(1)
+
+--- nutriment (table nutrient_synonym) (2) ---
+sel(310), sucre(25)
+
+--- nutriment/composition generique (12) ---
+grasse(53), graisse(52), matiere(40), vitamine(33), maigre(17), teneur(17), fer(8), acide(7), folique(7), vitamines(7), alcool(7), zinc(6)
+
+--- preparation/etat (78) ---
+bouilli(199), cru(168), bouillie(106), egoutte(100), crue(88), trempe(80), fraiches(72), liquide(50), bouillies(48), entier(48), egouttee(35), crues(35), frais(32), vapeur(30), grille(30), egouttees(26), entiers(24), sechee(24), cuit(23), grillee(22), sechees(20), mijotee(20), decortique(19), fermente(19), mure(18), seche(17), conserve(14), poudre(13), cuite(11), complete(9), decortiquee(9), tamisee(8), trempee(8), mijote(7), ecreme(7), decortiques(6), fermentee(6), frites(5), frite(5), fraiche(5), complet(4), bouillis(4), epluchee(4), vide(4), ecaille(4), frit(3), lave(3), cuites(3), salee(3), blanchi(3), poli(3), concentre(3), crus(3), mur(3), hachee(3), mures(2), moulu(2), egouttes(2), degraissee(2), griller(1), rape(1), egrene(1), decortiquees(1), completes(1), fumee(1), grillees(1), mijotees(1), grilles(1), mijotes(1), entiere(1), condense(1), pasteurise(1), sterilise(1), sale(1), clarifie(1), moulue(1), solide(1), seches(1)
+
+--- provenance/qualificatif (64) ---
+ingredient(131), recette(131), burkina(116), faso(116), blanc(112), enrichie(69), differentes(44), nigeria(34), rouge(34), ghana(31), jaune(30), variete(28), guinee(27), environ(23), env(22), benin(21), blanche(21), raffinee(20), angole(20), enrichi(19), mcg(18), g(18), ivoire(16), moderee(16), brun(15), verte(14), melange(13), varietes(13), noir(11), pale(11), nord(10), togo(10), sierra(10), leone(10), cote(10), mali(10), niger(10), senegal(10), liberia(10), bissau(9), claire(8), brune(8), afrique(8), vert(7), ajoute(6), vertes(5), partiellement(5), fonce(4), comestible(4), africaine(4), cultivars(3), combines(3), verts(3), specifies(3), clair(3), prealablement(2), age(2), mois(2), enrichis(1), noire(1), africain(1), rouges(1), faible(1), jamaique(1)
+
+==============================================================================
+MOTS GARDES -- candidats mots-cles d'aliment (365)
+==============================================================================
+  feuilles             freq=99
+  mais                 freq=80
+  viande               freq=70
+  farine               freq=63
+  huile                freq=52
+  niebe                freq=44
+  legumes              freq=43
+  tubercule            freq=42
+  poisson              freq=40
+  mil                  freq=39
+  pois                 freq=39
+  lait                 freq=37
+  fruit                freq=37
+  grain                freq=35
+  grains               freq=34
+  igname               freq=34
+  haricot              freq=34
+  sauce                freq=33
+  boeuf                freq=33
+  poulet               freq=27
+  manioc               freq=26
+  riz                  freq=25
+  plantain             freq=25
+  arachide             freq=24
+  banane               freq=24
+  palme                freq=24
+  noix                 freq=22
+  nere                 freq=21
+  agneau               freq=21
+  vache                freq=21
+  bambara              freq=20
+  ble                  freq=19
+  to                   freq=18
+  orange               freq=17
+  patate               freq=17
+  douce                freq=17
+  fonio                freq=16
+  soja                 freq=15
+  sorgho               freq=14
+  pate                 freq=14
+  oeuf                 freq=14
+  pomme                freq=13
+  porc                 freq=13
+  eau                  freq=12
+  degerme              freq=12
+  potasse              freq=12
+  tomate               freq=12
+  chou                 freq=12
+  creme                freq=12
+  soumbala             freq=12
+  gombo                freq=12
+  aubergine            freq=12
+  foie                 freq=12
+  graines              freq=11
+  chevre               freq=11
+  foufou               freq=10
+  pain                 freq=9
+  mouton               freq=9
+  saagbo               freq=9
+  caraibe              freq=9
+  crevette             freq=9
+  zeedo                freq=9
+  zeindo               freq=9
+  son                  freq=9
+  gruau                freq=8
+  oignon               freq=8
+  vegetale             freq=8
+  beurre               freq=8
+  baobab               freq=8
+  sesame               freq=8
+  graine               freq=8
+  coco                 freq=8
+  carpe                freq=8
+  atlantique           freq=8
+  chat                 freq=8
+  mahi                 freq=8
+  mer                  freq=8
+  tamarin              freq=7
+  zindo                freq=7
+  karite               freq=7
+  detar                freq=7
+  oseille              freq=7
+  epinard              freq=7
+  jus                  freq=7
+  foutou               freq=6
+  taro                 freq=6
+  corete               freq=6
+  potagere             freq=6
+  poivron              freq=6
+  vernonie             freq=6
+  pintade              freq=6
+  escargot             freq=6
+  poule                freq=6
+  thon                 freq=6
+  biere                freq=6
+  beng                 freq=5
+  feve                 freq=5
+  sabre                freq=5
+  lentille             freq=5
+  lima                 freq=5
+  amaranthe            freq=5
+  cola                 freq=5
+  amande               freq=5
+  anchois              freq=5
+  chinchard            freq=5
+  fromage              freq=5
+  beinre               freq=4
+  macaroni             freq=4
+  banakou              freq=4
+  bananes              freq=4
+  souchet              freq=4
+  citrouille           freq=4
+  courge               freq=4
+  araignee             freq=4
+  citron               freq=4
+  mangue               freq=4
+  rognon               freq=4
+  tripes               freq=4
+  chameau              freq=4
+  abats                freq=4
+  crocodile            freq=4
+  cervelle             freq=4
+  autruche             freq=4
+  lapin                freq=4
+  springbok            freq=4
+  morue                freq=4
+  barracuda            freq=4
+  bayad                freq=4
+  crabe                freq=4
+  maquereau            freq=4
+  mola                 freq=4
+  carplet              freq=4
+  mormiride            freq=4
+  mulet                freq=4
+  perche               freq=4
+  nil                  freq=4
+  sardine              freq=4
+  bulot                freq=4
+  capitaine            freq=4
+  palaemonidae         freq=4
+  penaeidae            freq=4
+  tilapia              freq=4
+  merou                freq=4
+  ovaltine             freq=4
+  ziem                 freq=3
+  boules               freq=3
+  jollof               freq=3
+  gonre                freq=3
+  moui                 freq=3
+  curry                freq=3
+  teff                 freq=3
+  carotte              freq=3
+  hibiscus             freq=3
+  cannabinus           freq=3
+  moringa              freq=3
+  oleifere             freq=3
+  piment               freq=3
+  navet                freq=3
+  feuille              freq=3
+  figue                freq=3
+  pasteque             freq=3
+  chenille             freq=3
+  sauterelle           freq=3
+  palourde             freq=3
+  venus                freq=3
+  yaourt               freq=3
+  coton                freq=3
+  tournesol            freq=3
+  boisson              freq=3
+  moutarde             freq=3
+  levure               freq=3
+  soupe                freq=3
+  tei                  freq=3
+  baling               freq=2
+  singe                freq=2
+  dejeuner             freq=2
+  fura                 freq=2
+  nouilles             freq=2
+  instantanees         freq=2
+  indomie              freq=2
+  aromatisants         freq=2
+  spaghetti            freq=2
+  avoine               freq=2
+  couscous             freq=2
+  gari                 freq=2
+  ragout               freq=2
+  pommes               freq=2
+  wesla                freq=2
+  oeufs                freq=2
+  gingembre            freq=2
+  racine               freq=2
+  prune                freq=2
+  palmier              freq=2
+  etoile               freq=2
+  arbre                freq=2
+  cajou                freq=2
+  date                 freq=2
+  fruits               freq=2
+  pamplemousse         freq=2
+  liane                freq=2
+  melon                freq=2
+  cannelle             freq=2
+  egousi               freq=2
+  pistache             freq=2
+  mopane               freq=2
+  termite              freq=2
+  canne                freq=2
+  caille               freq=2
+  dinde                freq=2
+  maternel             freq=2
+  infantile            freq=2
+  brebis               freq=2
+  margarine            freq=2
+  cafe                 freq=2
+  boite                freq=2
+  bouteille            freq=2
+  poivre               freq=2
+  babenda              freq=2
+  blouvank             freq=2
+  katre                freq=2
+  nagouri              freq=2
+  beenkida             freq=1
+  grumaux              freq=1
+  biscuit              freq=1
+  boalboal             freq=1
+  boulettes            freq=1
+  gateau               freq=1
+  cantonnais           freq=1
+  vermicelles          freq=1
+  cornflakes           freq=1
+  cereales             freq=1
+  croissant            freq=1
+  saamdin              freq=1
+  gappal               freq=1
+  sagabo               freq=1
+  korokoro             freq=1
+  doro                 freq=1
+  kenkey               freq=1
+  ogi                  freq=1
+  hausa                freq=1
+  saalga               freq=1
+  kalogo               freq=1
+  flocons              freq=1
+  pigri                freq=1
+  grenade              freq=1
+  galettes             freq=1
+  cabo                 freq=1
+  verde                freq=1
+  weet                 freq=1
+  cereale              freq=1
+  souma                freq=1
+  alibo                freq=1
+  elubo                freq=1
+  lafun                freq=1
+  kamoag               freq=1
+  tehi                 freq=1
+  afzelia              freq=1
+  africana             freq=1
+  bordeaux             freq=1
+  boussan              freq=1
+  touba                freq=1
+  crepes               freq=1
+  faro                 freq=1
+  soumma               freq=1
+  anidaso              freq=1
+  jenguma              freq=1
+  quarshie             freq=1
+  salintuya            freq=1
+  laurier              freq=1
+  concombre            freq=1
+  ail                  freq=1
+  laitue               freq=1
+  menthe               freq=1
+  persil               freq=1
+  thym                 freq=1
+  ronier               freq=1
+  akee                 freq=1
+  avocat               freq=1
+  carambole            freq=1
+  clementine           freq=1
+  sycomore             freq=1
+  cocktail             freq=1
+  sirop                freq=1
+  raisins              freq=1
+  goyave               freq=1
+  jujube               freq=1
+  caoutchouc           freq=1
+  cantaloup            freq=1
+  miellat              freq=1
+  mombin               freq=1
+  papaye               freq=1
+  ananas               freq=1
+  savon                freq=1
+  corossol             freq=1
+  dika                 freq=1
+  citrullus            freq=1
+  fourmi               freq=1
+  volante              freq=1
+  bambou               freq=1
+  corned               freq=1
+  beef                 freq=1
+  katydid              freq=1
+  gibier               freq=1
+  kedjenou             freq=1
+  larves               freq=1
+  saucisse             freq=1
+  viennoise            freq=1
+  omelette             freq=1
+  sardines             freq=1
+  colostrum            freq=1
+  cheddar              freq=1
+  gouda                freq=1
+  fondu                freq=1
+  tartiner             freq=1
+  chamelle             freq=1
+  uht                  freq=1
+  ghee                 freq=1
+  olive                freq=1
+  boissons             freq=1
+  gazeuses             freq=1
+  coca                 freq=1
+  sprite               freq=1
+  instantane           freq=1
+  nectar               freq=1
+  vin                  freq=1
+  seve                 freq=1
+  the                  freq=1
+  infusion             freq=1
+  robinet              freq=1
+  anis                 freq=1
+  bicarbonate          freq=1
+  soude                freq=1
+  muscade              freq=1
+  calebasse            freq=1
+  bouillon             freq=1
+  cube                 freq=1
+  cumin                freq=1
+  miel                 freq=1
+  confiture            freq=1
+  marmelade            freq=1
+  bonbons              freq=1
+  chocolat             freq=1
+  vinaigre             freq=1
+  extrait              freq=1
+  marmite              freq=1
+  tchenebdo            freq=1
+  bengedo              freq=1
+  tomates              freq=1
+  ziim                 freq=1
+  epinards             freq=1
+  djoumble             freq=1
+  nayoungn             freq=1
+  choux                freq=1
+  yassa                freq=1
+  betterave            freq=0
+  champignon           freq=0
+  raisin               freq=0
+  kapok                freq=0
+  datte                freq=0
+  salade               freq=0
+  courgette            freq=0
+  silure               freq=0
+  celeri               freq=0
+  amarante             freq=0
+  fraise               freq=0

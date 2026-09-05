@@ -6,24 +6,18 @@ lot 30/48, les 29 precedents restent acquis -- relancer le script reprend
 exactement la ou il s'est arrete, sans rien recalculer en double.
 """
 
-import os
-
 import psycopg2
 import psycopg2.extras
 from pgvector.psycopg2 import register_vector
 from sentence_transformers import SentenceTransformer
 
+from nutrition_kb.db import DSN
 from nutrition_kb.rag.embedding import EMBEDDING_MODEL, encode_passages
 
 # ~64 : assez gros pour amortir le cout fixe de chaque appel au modele
 # (3084 encodages un par un seraient tres lents), assez petit pour ne pas
 # saturer la memoire sur un simple CPU.
 BATCH_SIZE = 64
-
-DSN = os.environ.get(
-    "NUTRITION_KB_DSN",
-    "postgresql://nutrition:nutrition@localhost:5432/nutrition_kb",
-)
 
 
 def fetch_pending(cur) -> list:

@@ -6,22 +6,18 @@ L'embedding n'est pas rempli ici -- etape separee, une fois le modele choisi.
 """
 
 import io
-import os
 
 import pandas as pd
 import psycopg2
 import psycopg2.extras
 
+from nutrition_kb.db import DSN
 from nutrition_kb.rag.chunks import (
     render_diabetes_chunk,
     render_hypertension_chunk,
     render_macros_chunk,
 )
 
-DSN = os.environ.get(
-    "NUTRITION_KB_DSN",
-    "postgresql://nutrition:nutrition@localhost:5432/nutrition_kb",
-)
 SOURCE_ID = "WAFCT_2019"
 
 ANGLES = [

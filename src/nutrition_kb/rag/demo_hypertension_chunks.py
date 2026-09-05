@@ -8,20 +8,15 @@ Sans argument, utilise les 4 aliments-temoins (plat calcule, provenances
 mixtes, ratio non defini, cas simple).
 """
 
-import os
 import sys
 
 import psycopg2
 import psycopg2.extras
 
+from nutrition_kb.db import DSN
 from nutrition_kb.rag.chunks import render_hypertension_chunk
 
 DEFAULT_FOOD_CODES = ["01_172", "01_188", "11_013", "05_016"]
-
-DSN = os.environ.get(
-    "NUTRITION_KB_DSN",
-    "postgresql://nutrition:nutrition@localhost:5432/nutrition_kb",
-)
 
 
 def main() -> int:

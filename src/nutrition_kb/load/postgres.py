@@ -15,20 +15,16 @@ une partie des lignes ne doit pas passer inapercu.
 """
 
 import io
-import os
 import sys
 from pathlib import Path
 
 import pandas as pd
 import psycopg2
 
+from nutrition_kb.db import DSN
+
 ROOT_DIR = Path(__file__).resolve().parents[3]
 SILVER_DIR = ROOT_DIR / "data" / "silver"
-
-DSN = os.environ.get(
-    "NUTRITION_KB_DSN",
-    "postgresql://nutrition:nutrition@localhost:5432/nutrition_kb",
-)
 
 SOURCE_ID = "WAFCT_2019"
 

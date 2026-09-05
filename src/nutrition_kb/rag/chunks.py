@@ -24,7 +24,7 @@ from typing import Mapping, Optional, Sequence
 SOURCE_LINE = "Source : FAO/INFOODS WAFCT 2019."
 
 
-def _format_number(value) -> str:
+def format_number(value) -> str:
     value = float(value)
     if value == int(value):
         return str(int(value))
@@ -44,7 +44,7 @@ def _french_category(category: str) -> str:
     return category.split("/")[-1].strip() if "/" in category else category
 
 
-def _qualifier_clause(status: Optional[str], provenance: Optional[str]) -> str:
+def qualifier_clause(status: Optional[str], provenance: Optional[str]) -> str:
     bits = []
     if status == "ESTIMATED":
         bits.append("valeur estimée")
@@ -66,8 +66,8 @@ def _de(label: str) -> str:
 def _nutrient_clause(label: str, value, unit: str, status: Optional[str], provenance: Optional[str]) -> str:
     if value is None:
         return f"une teneur en {label} non mesurée"
-    clause = f"environ {_format_number(value)} {unit} {_de(label)}"
-    qualifier = _qualifier_clause(status, provenance)
+    clause = f"environ {format_number(value)} {unit} {_de(label)}"
+    qualifier = qualifier_clause(status, provenance)
     if qualifier:
         clause += f" ({qualifier})"
     return clause
@@ -116,7 +116,7 @@ def _ratio_sentence(ratio, reason: Optional[str]) -> str:
         lecture = "le potassium y est proportionnellement plus abondant que le sodium"
     else:
         lecture = "le sodium y est proportionnellement plus abondant que le potassium"
-    return f"Le ratio sodium/potassium est d'environ {_format_number(ratio)} : {lecture}."
+    return f"Le ratio sodium/potassium est d'environ {format_number(ratio)} : {lecture}."
 
 
 def render_hypertension_chunk(food_row: Mapping) -> str:
@@ -150,8 +150,8 @@ def _carb_density_sentence(name: str, energy_kcal, density) -> str:
     if density is None:
         return f"La densité glucidique {_de(name)} n'est pas calculable (énergie ou glucides non mesurés)."
     return (
-        f"Avec {_format_number(energy_kcal)} kcal pour 100 g, cela représente environ "
-        f"{_format_number(density)} g de glucides disponibles pour 100 kcal."
+        f"Avec {format_number(energy_kcal)} kcal pour 100 g, cela représente environ "
+        f"{format_number(density)} g de glucides disponibles pour 100 kcal."
     )
 
 
@@ -182,7 +182,7 @@ def render_diabetes_chunk(food_row: Mapping) -> str:
             "son impact sur la glycémie ne peut pas être évalué."
         )
     elif float(carbs) == 0:
-        qualifier = _qualifier_clause(food_row["glycemic_carbs_status"], food_row["glycemic_carbs_provenance"])
+        qualifier = qualifier_clause(food_row["glycemic_carbs_status"], food_row["glycemic_carbs_provenance"])
         suffix = f" ({qualifier})" if qualifier else ""
         sentences.append(
             f"{short} ne contient pas de glucides disponibles{suffix} : aucun impact direct sur la glycémie."

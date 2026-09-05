@@ -40,8 +40,32 @@ Deux limites ont été mesurées, pas supposées, après le passage à e5-small 
 1. **Négation lexicale.** « aliment très salé » remonte des plats étiquetés
    « bouilli **sans sel** » — la négation dans le nom de préparation (note de
    cuisson : pas de sel ajouté) est confondue avec l'affirmation recherchée
-   (teneur intrinsèque élevée en sodium). Atténué par le changement de
-   modèle (distances divisées par ~2), pas éliminé.
+   (teneur intrinsèque élevée en sodium). Mesuré sur deux tests indépendants,
+   **sur les deux modèles, sans exception** :
+
+   *Test A — phrases minimales* (similarité cosinus, requête = « un plat très
+   salé ») :
+
+   | Modèle | sim(POSITIF « riche en sodium ») | sim(NÉGATIF « cuit sans sel ») | Écart |
+   |---|---|---|---|
+   | paraphrase-MiniLM | 0.838 | **0.855** | −0.017 |
+   | e5-small | 0.854 | **0.873** | −0.019 |
+
+   *Test B — vrais chunks de la base* (requête = « un aliment très salé ») :
+
+   | Modèle | sim(Bouillon-cube, 19 000 mg de sodium) | sim(Tripes de bœuf « bouillies sans sel ») | Verdict |
+   |---|---|---|---|
+   | paraphrase-MiniLM | 0.365 | **0.582** | inversé |
+   | e5-small | 0.813 | **0.834** | inversé |
+
+   Dans les 4 mesures, le texte qui dit « sans sel » bat celui qui parle
+   réellement de sodium élevé — y compris le vrai bouillon-cube face à des
+   tripes sans rapport avec le sel ajouté. Le passage à e5-small a clairement
+   amélioré la recherche question→passage en général (cf. cas poisson/patate
+   douce ci-dessus), mais **n'a strictement rien changé sur ce point précis** :
+   l'écart reste négatif, dans le même sens, avec la même ampleur relative.
+   Confirme qu'un troisième modèle ne réglerait probablement pas non plus ce
+   point — c'est structurel, pas un choix de modèle à affiner.
 2. **Jugement de magnitude.** « aliment riche en sodium » ne retrouve pas
    fiablement `Sel` (38 800 mg) ou `Bouillon-cube` (19 000 mg) — les chunks
    n'énoncent jamais qu'un aliment est « riche » ou « très salé » en toutes
