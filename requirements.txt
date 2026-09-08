@@ -12,3 +12,6 @@ pgvector==0.5.0
 
 # src/nutrition_kb/agent/llm_agent.py
 requests==2.33.0
+
+# app/streamlit_app.py
+streamlit==1.56.0
