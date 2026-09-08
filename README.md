@@ -4,9 +4,9 @@ Un assistant nutritionnel pour les personnes vivant avec le diabète et/ou l'hyp
 
 ## Pourquoi ce projet
 
-Trouver une information nutritionnelle fiable, en français, sur des aliments réellement consommés en Afrique de l'Ouest (gombo, tô, soumbala, niébé...) n'est pas simple : la plupart des bases et applications grand public sont bâties sur des régimes alimentaires occidentaux. Pour une personne diabétique ou hypertendue à Ouagadougou, savoir combien de sodium contient réellement le bouillon-cube qu'elle utilise tous les jours n'est pas un détail — c'est une information qui affecte directement sa santé.
+Trouver une information nutritionnelle fiable, en français, sur des aliments réellement consommés en Afrique de l'Ouest (gombo, tô, soumbala, niébé...) n'est pas simple : la plupart des bases et applications grand public sont bâties sur des régimes alimentaires occidentaux. Pour une personne diabétique ou hypertendue à Ouagadougou, savoir combien de sodium contient réellement le bouillon-cube qu'elle utilise tous les jours n'est pas un détail, c'est une information qui affecte directement sa santé.
 
-Ce projet part d'une source fiable et citable (la table FAO/INFOODS WAFCT 2019, qui couvre spécifiquement l'Afrique de l'Ouest) pour construire un assistant qui répond en français, sur des aliments locaux, à partir de données réelles — jamais de mémoire.
+Ce projet part d'une source fiable et citable (la table FAO/INFOODS WAFCT 2019, qui couvre spécifiquement l'Afrique de l'Ouest) pour construire un assistant qui répond en français, sur des aliments locaux, à partir de données réelles , jamais de mémoire.
 
 ## Ce que fait l'assistant
 
@@ -16,7 +16,7 @@ Quelques exemples de questions traitées :
 - **« Le gombo est-il bon pour l'hypertension ? »** → une réponse construite à partir des fiches nutritionnelles de la base, sourcée (FAO/INFOODS WAFCT 2019), sans avis médical personnalisé (ce point est expliqué plus bas).
 - **« Ma glycémie est à 1,80 g/L, qu'est-ce que je fais ? »** → l'assistant n'interprète JAMAIS une valeur de santé. Il oriente vers un professionnel de santé, sans mélanger ça à un conseil nutritionnel.
 
-L'assistant tourne **entièrement en local** : la base de données et le modèle de langage (Ollama) s'exécutent sur votre machine, aucune question n'est envoyée à un service cloud tiers. Seule exception : le tout premier lancement télécharge le modèle Ollama et le modèle d'embedding depuis leurs dépôts respectifs — une fois cela fait, tout fonctionne hors-ligne côté données et côté génération.
+L'assistant tourne **entièrement en local** : la base de données et le modèle de langage (Ollama) s'exécutent sur votre machine, aucune question n'est envoyée à un service cloud tiers. Seule exception : le tout premier lancement télécharge le modèle Ollama et le modèle d'embedding depuis leurs dépôts respectifs . Une fois cela fait, tout fonctionne hors-ligne côté données et côté génération.
 
 ## Architecture en bref
 
@@ -66,7 +66,7 @@ docker run -d --name nutrition-kb-postgres \
 export NUTRITION_KB_DSN="postgresql://nutrition:CHANGE_ME@localhost:5432/nutrition_kb"
 ```
 
-(`NUTRITION_KB_DSN` est lu par `src/nutrition_kb/db.py` ; sans cette variable, un DSN de développement par défaut est utilisé — à ne pas garder tel quel.)
+(`NUTRITION_KB_DSN` est lu par `src/nutrition_kb/db.py` ; sans cette variable, un DSN de développement par défaut est utilisé , à ne pas garder tel quel.)
 
 ### 3. Schéma
 
@@ -129,7 +129,7 @@ python scripts/try_router.py batch  # juste la décision de routage, sans exécu
 pytest -q
 ```
 
-Une partie de la suite touche la vraie base de données et le vrai modèle Ollama (délibéré — voir la philosophie de test dans les ADR) : les étapes 2 à 7 doivent être en place pour que tout passe.
+Une partie de la suite touche la vraie base de données et le vrai modèle Ollama (c'est un choix délibéré,  voir la philosophie de test dans les ADR) : les étapes 2 à 7 doivent être en place pour que tout passe.
 
 ## Sources & licence des données
 
@@ -139,11 +139,11 @@ Usage non commercial autorisé avec citation de la source. Toute utilisation com
 
 ## Limites connues
 
-Ce projet est **en construction**, et le dit ouvertement plutôt que de le cacher. Quelques exemples des limites actuellement documentées :
+Ce projet est **en construction**, et je le dit ouvertement plutôt que de le cacher. Quelques exemples des limites actuellement documentées :
 
 - L'assistant peut confondre un aliment absent de la base avec un aliment présent au nom lexicalement proche (ex. « foie gras » ↔ « foie de bœuf »).
 - Le conseil nutritionnel reste volontairement **descriptif**, jamais prescriptif, en v1 (« ceci est pauvre en sodium », jamais « vous devriez en manger ») — le conseil personnalisé est prévu pour une v2, avec un cadre médical adapté.
-- La recherche vectorielle a des angles morts connus et mesurés (négation, jugement de magnitude) — documentés plutôt que masqués.
+- La recherche vectorielle a des angles morts connus et mesurés (négation, jugement de magnitude)  documentés plutôt que masqués.
 
 Le registre complet, avec pour chaque limite le symptôme observé, la cause et la piste de résolution envisagée, est dans [`docs/limitations.md`](docs/limitations.md). Les limites propres à la recherche vectorielle sont détaillées dans [`docs/adr/0009`](docs/adr/0009-retrieval-asymetrique-et-limites-du-vecteur.md).
 
@@ -154,6 +154,6 @@ Le registre complet, avec pour chaque limite le symptôme observé, la cause et 
 **Fonctionne aujourd'hui** : pipeline complet raw → silver → gold, routeur par règles (filet de sécurité déterministe), agent LLM local avec function calling (recherche sémantique + classement SQL), garde-fous de sécurité côté code (orientation médicale systématique, blocage des valeurs inventées).
 
 **Prévu** :
-- Lexique local (mooré et autres langues) — la table est prête (`kb.food_alias`), pas encore peuplée.
+- Lexique local (mooré et autres langues) , la table est prête (`kb.food_alias`), pas encore peuplée.
 - Conseil nutritionnel personnalisé (v2), avec un cadre médical et une segmentation adaptés.
 - Déploiement mobile.
