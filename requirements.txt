@@ -9,3 +9,6 @@ psycopg2==2.9.12
 # src/nutrition_kb/rag/embed_chunks.py
 sentence-transformers==5.6.0
 pgvector==0.5.0
+
+# src/nutrition_kb/agent/llm_agent.py
+requests==2.33.0
