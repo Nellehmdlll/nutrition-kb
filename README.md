@@ -118,6 +118,7 @@ Ollama doit tourner sur `http://localhost:11434` (le port par défaut, aucune co
 ### 8. Lancer l'agent
 
 ```bash
+streamlit run app/streamlit_app.py  # interface de chat web — Ollama et PostgreSQL doivent tourner
 python scripts/try_llm_agent.py     # agent LLM (Ollama) — mode interactif, avec trace des outils appelés
 python scripts/try_agent.py         # agent par règles (sans LLM) — routeur + exécution + réponse
 python scripts/try_router.py batch  # juste la décision de routage, sans exécuter les outils
