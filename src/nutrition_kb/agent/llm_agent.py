@@ -17,7 +17,7 @@ BOUCLE :
   4. Boucle jusqu'a une reponse en texte (pas d'appel d'outil), ou jusqu'a
      MAX_TOOL_ROUNDS (un LLM n'est pas garanti de converger).
 
-SECURITE -- deux barrieres INDEPENDANTES du bon vouloir du LLM :
+SECURITE -- barrieres INDEPENDANTES du bon vouloir du LLM :
   - Medicale : detect_medical_signal() tourne AVANT tout appel a Ollama. Un
     signal detecte court-circuite completement le LLM -- meme texte de
     referral que le routeur par regles (render_response), point commun aux
@@ -28,9 +28,21 @@ SECURITE -- deux barrieres INDEPENDANTES du bon vouloir du LLM :
     ecrit le SQL (barriere deja en place dans tools.py). Tout argument venu
     du LLM (tagname, order, intent) est VALIDE avant d'atteindre les outils
     -- jamais de confiance aveugle sur une sortie de LLM.
+  - Anti-invention : si aucun outil n'a renvoye de donnees dans le tour ET
+    que la reponse du LLM contient un chiffre colle a une unite nutritionnelle
+    (mg, g, kcal...), la reponse est BLOQUEE cote code et remplacee par un
+    message honnete -- observe en pratique (le LLM a invente des valeurs pour
+    un aliment absent de la base, signees "FAO/INFOODS WAFCT 2019"). Limite
+    connue : ne detecte que l'invention CHIFFREE, pas une affirmation
+    qualitative sans nombre (cf. docs/limitations.md).
+  - Conseil medical/dietetique prescriptif ("vous pouvez manger", "evitez") :
+    UNIQUEMENT attenue par le system prompt pour l'instant, pas de barriere
+    code. Faille CONNUE, non entierement reglee -- cf. docs/limitations.md.
 """
 
 import json
+import logging
+import re
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
@@ -43,6 +55,8 @@ from nutrition_kb.agent.execute import ExecutionResult, resolve_unit
 from nutrition_kb.agent.render import render_response
 from nutrition_kb.agent.tools import KNOWN_INTENTS, UnknownIntentError, query_sql, search_vector
 from nutrition_kb.db import DSN
+
+logger = logging.getLogger(__name__)
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL = "llama3.1:8b"
@@ -184,9 +198,17 @@ def execute_tool_call(name: str, arguments: dict, original_question: str) -> dic
         # _build_tools) ; on ignore quand meme tout ce qu'il aurait pu y
         # mettre par ailleurs -- defense en profondeur, pas de confiance
         # aveugle sur la forme exacte de ce qu'un modele renvoie.
+        #
+        # 'angle' est TOLERANT, jamais bloquant : observe en pratique, un LLM
+        # de 8B remplit parfois ce champ avec n'importe quoi ("null", "",
+        # "diabetes,hypertension"...). Le rejeter comme une erreur empechait
+        # la recherche de tourner DU TOUT -- zero donnee, le LLM invente pour
+        # combler (cf. _looks_fabricated plus bas). Toute valeur hors des 3
+        # connues degrade silencieusement vers "pas d'angle" (recherche sur
+        # tous les angles) plutot que de bloquer l'outil.
         angle = arguments.get("angle")
-        if angle is not None and angle not in ("diabetes", "hypertension", "macros"):
-            return {"error": f"angle invalide : {angle!r} (attendu diabetes/hypertension/macros, ou rien)"}
+        if angle not in ("diabetes", "hypertension", "macros"):
+            angle = None
         hits = search_vector(original_question, angle=angle)
         return {"hits": [asdict(h) for h in hits]}
 
@@ -209,6 +231,48 @@ def execute_tool_call(name: str, arguments: dict, original_question: str) -> dic
         return {"rows": [asdict(r) for r in rows]}
 
     return {"error": f"outil inconnu : {name!r}"}
+
+
+# ---------------------------------------------------------------------------
+# Garde-fou anti-invention -- CODE, pas juste prompt : observe en pratique,
+# quand search_vector echoue (zero resultat), le LLM peut inventer des
+# chiffres et les attribuer a "la base FAO/INFOODS WAFCT 2019" (invention
+# signee de notre source, critique). Le prompt seul ne suffit pas a
+# l'empecher de facon fiable -- verifie en test reel.
+#
+# Regle : si la reponse contient un CHIFFRE colle a une UNITE nutritionnelle
+# ET qu'aucun outil n'a renvoye de donnees dans ce tour -> la reponse est
+# bloquee et remplacee par un message honnete.
+#
+# LIMITE CONNUE (cf. docs/limitations.md) : ne detecte QUE l'invention
+# CHIFFREE. Une affirmation qualitative inventee sans valeur ("le quinoa est
+# riche en fer", sans nombre) n'est PAS attrapee -- probleme d'ancrage plus
+# general, non resoluble simplement par une regex. Assume pour l'instant.
+# ---------------------------------------------------------------------------
+
+_NUTRITION_UNITS = r"(?:kcal|kj|kg|mcg|mg|µg|g|%)"
+_NUTRITION_VALUE_RE = re.compile(
+    rf"\d[\d\s.,]*{_NUTRITION_UNITS}\b|\b{_NUTRITION_UNITS}\s*\d",
+    re.IGNORECASE,
+)
+
+FABRICATION_FALLBACK = (
+    "Je n'ai pas d'information fiable sur cet aliment dans ma base de données. "
+    "Il n'y figure peut-être pas encore. Je préfère ne rien affirmer plutôt que "
+    "de vous donner un chiffre incertain."
+)
+
+
+def _trace_has_data(trace: list) -> bool:
+    """Un outil a-t-il reellement renvoye des donnees dans ce tour ? (pas
+    juste ete appele -- une erreur ou un resultat vide ne comptent pas)."""
+    return any(call["result"].get("rows") or call["result"].get("hits") for call in trace)
+
+
+def _looks_fabricated(response_text: str, trace: list) -> bool:
+    if _trace_has_data(trace):
+        return False
+    return bool(_NUTRITION_VALUE_RE.search(response_text))
 
 
 def _call_ollama(messages: list, tools: list) -> dict:
@@ -252,7 +316,18 @@ def run_llm_agent(question: str, history: Optional[list] = None) -> tuple:
 
         tool_calls = message.get("tool_calls") or []
         if not tool_calls:
-            return message.get("content", ""), trace, messages
+            response_text = message.get("content", "")
+            if _looks_fabricated(response_text, trace):
+                logger.warning(
+                    "Reponse LLM bloquee (invention suspectee, aucune donnee d'outil) -- question=%r reponse_bloquee=%r",
+                    question, response_text,
+                )
+                response_text = FABRICATION_FALLBACK
+                # Remplace aussi dans l'historique : une valeur inventee ne
+                # doit jamais rester disponible pour un tour suivant (le LLM
+                # pourrait la "reciter" comme acquise dans une reponse a venir).
+                messages[-1] = {"role": "assistant", "content": response_text}
+            return response_text, trace, messages
 
         for call in tool_calls:
             fn = call["function"]

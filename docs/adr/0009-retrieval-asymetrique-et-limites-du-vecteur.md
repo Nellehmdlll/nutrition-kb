@@ -1,6 +1,6 @@
 # ADR 0009 — e5-small pour retrieval asymétrique ; négation et magnitudes hors du vecteur
 
-- **Statut** : Accepté
+- **Statut** : Accepté — révisé le 2026-09-08 (Complément : faux ami lexical)
 - **Date** : 2026-07-15
 - **Décideurs** : l'équipe (Sawadogo Rahimah + mentor technique IA)
 - **Portée** : couche RAG (choix du modèle d'embedding, périmètre de la recherche vectorielle)
@@ -117,3 +117,39 @@ X mg de sodium »), plutôt que de tout confier à l'embedding.
   recalculé à chaque changement de barème) et dupliquerait en texte une
   information déjà présente, typée et fiable dans les colonnes SQL. Écartée
   au profit de la recherche hybride.
+
+## Complément (2026-09-08) — troisième limite mesurée : le faux ami lexical
+
+Une troisième limite, de la même famille que la négation et la magnitude
+(§ Décision), a été mesurée en testant l'agent LLM en conditions réelles
+(cf. `docs/limitations.md`, limite n°5) : **un aliment ABSENT de la base mais
+lexicalement proche d'un aliment PRÉSENT peut se voir substituer les valeurs
+de ce voisin**, sans que la distance seule permette de le détecter.
+
+Mesuré sur `intfloat/multilingual-e5-small`, seuil actuel 0.18 :
+
+| Requête | Statut | Meilleur match | Distance |
+|---|---|---|---|
+| `foie de bœuf` | présent | lui-même | **0.101** (vrai match) |
+| `foie gras` | absent | foie d'agneau / foie de bœuf | **0.156** (sous le seuil → retourné) |
+| `quinoa` | absent | ragoût d'igname | 0.193 (au-dessus → rejeté) |
+| `sushis` | absent | sauce au poisson | 0.184 (au-dessus → rejeté) |
+| `caviar` | absent | crevette | 0.201 (au-dessus → rejeté) |
+
+Le seuil protège correctement contre un aliment absent SANS voisin lexical
+proche (quinoa, sushis, caviar restent au-dessus de 0.18). Il ne protège PAS
+contre un aliment absent qui partage un mot avec un aliment présent (« foie
+gras » vs « foie de bœuf ») : le faux ami vit dans la même zone de distance
+qu'un vrai match légèrement éloigné (0.10–0.16), donc baisser le seuil pour
+l'exclure exclurait aussi des matchs légitimes. Structurel, comme la
+négation et la magnitude : la distance mesure une proximité de SENS, pas une
+identité de nom.
+
+**Décision retenue pour cette limite** : pas de barrière côté code (vérifier
+le nom exigerait que `detect_food()` reconnaisse l'aliment de la question —
+il en est structurellement incapable pour un aliment absent, cf.
+`docs/limitations.md` n°5). Le system prompt (`docs/system_prompt.md`,
+section FIDÉLITÉ AUX DONNÉES) demande désormais explicitement de vérifier la
+correspondance aliment demandé / aliment des données, et de signaler toute
+substitution avant toute valeur. Atténuation par le prompt seul : réduit le
+risque, ne l'élimine pas.
