@@ -137,6 +137,70 @@ def test_execute_tool_call_rejects_unknown_tool_name():
     assert "error" in result
 
 
+def test_execute_tool_call_search_disease_info_returns_hits():
+    result = execute_tool_call(
+        "search_disease_info", {}, original_question="qu'est-ce que le diabète ?"
+    )
+    assert "hits" in result
+    assert len(result["hits"]) > 0
+    assert "content" in result["hits"][0]
+    assert "section" in result["hits"][0]
+
+
+def test_execute_tool_call_search_disease_info_ignores_llm_question_uses_original(monkeypatch):
+    # Meme correctif que search_vector : le LLM ne doit jamais reformuler la
+    # question envoyee a l'outil, meme s'il essaie.
+    calls = []
+
+    def fake_search_disease_info(question, disease=None):
+        calls.append(question)
+        return []
+
+    monkeypatch.setattr(llm_agent_mod, "search_disease_info", fake_search_disease_info)
+
+    original = "qu'est-ce que l'hypertension ?"
+    execute_tool_call(
+        "search_disease_info",
+        {"question": "qu'est-ce que l'hyper"},  # argument LLM tronque -- doit etre ignore
+        original_question=original,
+    )
+
+    assert calls == [original]
+
+
+def test_execute_tool_call_search_disease_info_tolerates_invalid_disease(monkeypatch):
+    # Meme tolerance que 'angle' sur search_vector : une valeur bizarre pour
+    # 'disease' ne doit jamais bloquer la recherche.
+    calls = []
+
+    def fake_search_disease_info(question, disease=None):
+        calls.append(disease)
+        return []
+
+    monkeypatch.setattr(llm_agent_mod, "search_disease_info", fake_search_disease_info)
+
+    for bad_disease in ["null", "", "diabete,hypertension", "cancer", None]:
+        result = execute_tool_call(
+            "search_disease_info", {"disease": bad_disease}, original_question="qu'est-ce que le diabète ?"
+        )
+        assert "error" not in result
+
+    assert calls == [None, None, None, None, None]
+
+
+def test_execute_tool_call_search_disease_info_accepts_valid_disease(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        llm_agent_mod, "search_disease_info", lambda question, disease=None: calls.append(disease) or []
+    )
+
+    execute_tool_call(
+        "search_disease_info", {"disease": "diabete"}, original_question="qu'est-ce que le diabète ?"
+    )
+
+    assert calls == ["diabete"]
+
+
 def test_looks_fabricated_blocks_number_with_unit_and_no_tool_data():
     assert _looks_fabricated("Le quinoa apporte environ 150 kcal et 4g de protéines.", []) is True
 
@@ -159,12 +223,66 @@ def test_looks_fabricated_passes_bare_number_without_unit():
 
 def test_looks_fabricated_ignores_tool_calls_that_only_errored_or_returned_nothing():
     # Un outil APPELE mais qui n'a rien renvoye (erreur, ou liste vide) ne
-    # compte pas comme "donnees disponibles".
+    # compte pas comme "donnees disponibles" -> bloque, ici via un chiffre
+    # invente (mais cf. test suivant : le blocage ne depend meme plus de ça).
     trace = [
         {"tool": "search_vector", "arguments": {}, "result": {"hits": []}},
         {"tool": "query_sql", "arguments": {}, "result": {"error": "nutriment inconnu"}},
     ]
     assert _looks_fabricated("Cet aliment contient environ 12 mg de sodium.", trace) is True
+
+
+def test_looks_fabricated_blocks_narrative_with_no_number_when_tool_called_empty():
+    # Extension du garde-fou : observe en pratique sur "raconte-moi ta
+    # journee" -- un outil appele qui renvoie zero donnee, puis un recit
+    # ENTIER sans aucun chiffre ("j'ai recu trois demandes aujourd'hui...").
+    # L'ancienne regle (chiffre+unite uniquement) laissait passer ce cas ;
+    # desormais, un outil appele sans donnees bloque QUEL QUE SOIT le texte.
+    trace = [{"tool": "search_vector", "arguments": {"angle": "diabetes"}, "result": {"hits": []}}]
+    narrative = (
+        "Aujourd'hui a été une journée très occupée ! J'ai reçu de nombreuses "
+        "questions de personnes qui souhaitaient connaître la composition "
+        "nutritionnelle des aliments locaux au Burkina Faso."
+    )
+    assert _looks_fabricated(narrative, trace) is True
+
+
+def test_looks_fabricated_passes_when_no_tool_called_and_no_number():
+    # Regression : si le LLM ne tente AUCUN outil et ne produit aucun chiffre,
+    # rien ne doit bloquer -- ex. une simple salutation. Le garde-fou etendu
+    # ne doit pas devenir surprotecteur pour les echanges qui n'ont jamais eu
+    # besoin d'un outil.
+    assert _looks_fabricated("Bonjour, comment puis-je vous aider ?", []) is False
+
+
+def test_run_llm_agent_blocks_narrative_when_tool_called_returns_nothing(monkeypatch):
+    # Reproduit le cas reel observe ("raconte-moi ta journee") : le LLM
+    # appelle bien un outil, l'outil renvoie zero resultat, puis le LLM
+    # improvise un recit sans aucun chiffre. Doit etre bloque comme le cas
+    # chiffre -- c'est exactement ce que l'extension du garde-fou corrige.
+    call_count = {"n": 0}
+
+    def fake_call_ollama(messages, tools):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [{"function": {"name": "search_vector", "arguments": {}}}],
+            }
+        return {
+            "role": "assistant",
+            "content": "Aujourd'hui a été une journée très occupée ! J'ai aidé plusieurs personnes.",
+        }
+
+    monkeypatch.setattr(llm_agent_mod, "_call_ollama", fake_call_ollama)
+    monkeypatch.setattr(llm_agent_mod, "search_vector", lambda question, angle=None: [])
+
+    text, trace, messages = run_llm_agent("raconte-moi ta journée")
+
+    assert text == FABRICATION_FALLBACK
+    assert len(trace) == 1
+    assert messages[-1]["content"] == FABRICATION_FALLBACK
 
 
 def test_run_llm_agent_blocks_fabricated_response_from_mocked_ollama(monkeypatch):
@@ -213,3 +331,13 @@ def test_run_llm_agent_end_to_end_smoke():
     assert len(text) > 0
     assert isinstance(trace, list)
     assert messages[-1]["role"] == "assistant"
+
+
+def test_run_llm_agent_end_to_end_smoke_disease_info():
+    # Test de fumee sur le nouvel outil : question sur LA MALADIE (pas un
+    # aliment) -> doit passer par search_disease_info. AUCUNE assertion sur
+    # le texte produit -- non deterministe.
+    text, trace, messages = run_llm_agent("qu'est-ce que le diabète ?")
+    assert isinstance(text, str)
+    assert len(text) > 0
+    assert any(call["tool"] == "search_disease_info" for call in trace)

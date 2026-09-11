@@ -53,25 +53,36 @@ sans avoir à relire chaque fichier.
   `DEFAULT_ORDER`), `src/nutrition_kb/agent/tools.py` (`_top_by_nutrient`,
   qui sait déjà faire `asc`).
 
-## 3. Le garde-fou anti-invention (agent LLM) ne détecte que l'invention CHIFFRÉE
+## 3. Le garde-fou anti-invention (agent LLM) ne détecte pas l'invention qualitative SANS aucun appel d'outil
 
-- **Symptôme** : le LLM peut affirmer une caractéristique nutritionnelle
-  fausse sans qu'aucun garde-fou ne s'en aperçoive (ex. « le quinoa est riche
-  en fer »), tant qu'aucun chiffre accompagné d'une unité (mg, g, kcal...)
-  n'apparaît dans la phrase.
-- **Cause** : le garde-fou code (`llm_agent.py`, `_looks_fabricated`) repose
-  sur une regex qui cherche un motif « chiffre + unité nutritionnelle » dans
-  la réponse, combiné à « aucun outil n'a renvoyé de données ». Une
-  affirmation qualitative sans valeur chiffrée n'a pas de signal exploitable
-  aussi simplement — l'ancrer nécessiterait de comparer le SENS de la phrase
-  aux données réellement disponibles, un problème bien plus dur qu'une regex
-  (et non résolu ici).
-- **Piste** : rien de simple identifié pour l'instant. Pistes à explorer plus
-  tard : forcer systématiquement un appel d'outil avant toute affirmation
-  portant sur un aliment (contrainte de function calling plus stricte), ou un
-  second passage LLM « juge » qui vérifie chaque affirmation contre les
-  données effectivement récupérées dans le tour.
-- **Statut** : assumé — risque résiduel connu, non couvert par le code actuel.
+- **Symptôme** : le LLM peut affirmer une caractéristique fausse sans qu'aucun
+  garde-fou ne s'en aperçoive (ex. « le quinoa est traditionnel au Burkina
+  Faso »), À CONDITION qu'il n'ait appelé AUCUN outil ET qu'aucun chiffre
+  accompagné d'une unité (mg, g, kcal...) n'apparaisse dans la phrase.
+  - **Historique** : cette limite couvrait au départ un périmètre plus large
+    (toute invention non chiffrée). Elle a été rétrécie une première fois
+    (2026-09) : observé en pratique qu'un outil appelé mais renvoyant zéro
+    donnée pouvait aussi produire un récit ENTIER sans aucun chiffre (ex.
+    « raconte-moi ta journée » → le LLM invente une journée-type, 6 fois sur
+    7 essais). Le garde-fou bloque désormais TOUTE réponse dès qu'au moins un
+    outil a été appelé sans renvoyer de données exploitables, quel que soit
+    son contenu — chiffre inventé ou pur récit. Le trou restant est donc
+    strictement plus étroit : il faut qu'AUCUN outil n'ait été appelé DU TOUT.
+- **Cause** : le garde-fou code (`llm_agent.py`, `_looks_fabricated`) bloque
+  sans condition sur le contenu dès qu'un outil a été appelé sans résultat.
+  Mais si le LLM n'appelle AUCUN outil, la seule chose que le garde-fou peut
+  encore détecter est un motif « chiffre + unité nutritionnelle » (regex) —
+  une affirmation qualitative sans valeur chiffrée n'a pas de signal
+  exploitable aussi simplement. L'ancrer nécessiterait de comparer le SENS de
+  la phrase aux données réellement disponibles, un problème bien plus dur
+  qu'une regex (et non résolu ici).
+- **Piste** : rien de simple identifié pour ce trou restant. Pistes à
+  explorer plus tard : forcer systématiquement un appel d'outil avant toute
+  affirmation portant sur un aliment ou une maladie (contrainte de function
+  calling plus stricte, empêchant le LLM de répondre sans jamais interroger
+  une source), ou un second passage LLM « juge » qui vérifie chaque
+  affirmation contre les données effectivement récupérées dans le tour.
+- **Statut** : assumé — risque résiduel connu, réduit mais pas éliminé.
 - **Voir aussi** : `src/nutrition_kb/agent/llm_agent.py` (`_looks_fabricated`,
   `_NUTRITION_VALUE_RE`), `tests/test_agent_llm_agent.py`.
 
@@ -139,3 +150,59 @@ sans avoir à relire chaque fichier.
 - **Voir aussi** : `docs/adr/0009-retrieval-asymetrique-et-limites-du-vecteur.md`
   (même famille que négation/magnitude), `docs/system_prompt.md` (section
   FIDÉLITÉ AUX DONNÉES).
+
+## 6. La frontière information/conseil sur le contenu MALADIE n'est qu'un renforcement de prompt, pas une garantie code
+
+- **Symptôme** : face à une question sur le diabète ou l'hypertension,
+  l'agent pourrait déraper vers une prescription personnalisée (« vous
+  devriez prendre de la metformine », « visez une tension de 130/80 ») au
+  lieu de rester sur l'information générale de l'OMS — le même type de
+  dérapage que celui déjà observé sur le soumbala (limite n°4), mais
+  appliqué cette fois au contenu `search_disease_info`.
+- **Cause** : cette frontière (décrire la maladie en général = autorisé,
+  prescrire à la personne pour son cas = interdit) n'est appliquée QUE par
+  le system prompt (`docs/system_prompt.md`, section « INFORMATION SUR LES
+  MALADIES »). Rien côté code ne vérifie ni ne bloque une réponse qui la
+  franchit — même limite structurelle que la limite n°4, pour un cas encore
+  plus nuancé : la frontière ne porte pas sur la PRÉSENCE d'un chiffre (cf.
+  garde-fou anti-invention, limite n°3) mais sur le DESTINATAIRE implicite de
+  la phrase (« on » vs « vous »), une distinction qu'une regex ne peut pas
+  fiablement trancher.
+- **Piste** : aucune barrière code simple identifiée pour l'instant — un
+  détecteur naïf sur « vous devriez »/« prenez » risquerait de bloquer aussi
+  des tournures légitimes (« vous pouvez en parler à votre médecin »). À
+  réévaluer en v2, probablement avec le même type de reflexion que la
+  limite n°4 (juger le destinataire de la phrase demande plus qu'un motif de
+  surface).
+- **Statut** : limite connue, assumée pour cette version.
+- **Voir aussi** : `docs/system_prompt.md` (section « INFORMATION SUR LES
+  MALADIES »), limite n°4 (même famille de problème, côté nutrition).
+
+## 7. Les fiches OMS grand public ne couvrent pas les mécanismes physiologiques (« pourquoi » biologique)
+
+- **Symptôme** : observé sur « pourquoi je dois limiter le sel quand j'ai de
+  la tension ? » — `search_disease_info` remonte 3 chunks bien pertinents (le
+  sel comme facteur de risque, la recommandation OMS de moins de 5 g/jour,
+  les bénéfices d'une réduction sur les infarctus/AVC/lésions rénales), mais
+  aucun n'explique le mécanisme biologique (pourquoi le sel fait
+  physiologiquement monter la tension). L'agent avait initialement tendance à
+  abandonner toute la réponse dans ce cas (message d'accueil générique) au
+  lieu d'utiliser les chunks pertinents disponibles — corrigé côté prompt,
+  cf. `docs/system_prompt.md` section UTILISATION DES OUTILS.
+- **Cause** : les fiches d'information OMS grand public (`kb.disease_chunk`)
+  répondent aux questions « quoi / combien / faut-il » mais pas aux « pourquoi »
+  mécanistiques — ce n'est pas leur objet (ce sont des fiches de
+  sensibilisation, pas des documents cliniques). Vérifié : aucune formulation
+  du mécanisme physiologique n'a été trouvée dans le contenu source pour
+  combler ce manque.
+- **Piste** : l'agent répond désormais avec l'information disponible et
+  signale le mécanisme comme non couvert par la source, sans l'inventer
+  (renforcement de prompt, pas une barrière code — même limite structurelle
+  que les limites n°4 et n°6 : ça réduit le risque d'abandon inutile, ça ne
+  garantit pas que l'agent le fasse à chaque fois). Si le besoin de détail
+  mécanistique se confirme sur plusieurs questions réelles, une piste v2 est
+  d'intégrer des documents techniques OMS plus détaillés (ex. le programme
+  HEARTS sur l'hypertension) en plus des fiches grand public actuelles.
+- **Statut** : limite connue, assumée pour cette version.
+- **Voir aussi** : `docs/system_prompt.md` (section UTILISATION DES OUTILS,
+  règle sur les résultats partiellement pertinents).

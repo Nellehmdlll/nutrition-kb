@@ -9,8 +9,9 @@ BOUCLE :
   1. Instruction systeme chargee depuis docs/system_prompt.md -- SOURCE
      UNIQUE, jamais dupliquee en dur ici (un prompt modifie sur disque est
      pris en compte au prochain appel, sans toucher au code).
-  2. Envoi a Ollama : system + historique + question + description des 2
-     outils (query_sql, search_vector) au format function calling.
+  2. Envoi a Ollama : system + historique + question + description des 3
+     outils (query_sql, search_vector, search_disease_info) au format
+     function calling.
   3. Si le LLM demande un outil -> on VALIDE ses arguments, puis on execute
      l'outil REEL (nos fonctions securisees), et on renvoie le resultat au
      LLM (role 'tool').
@@ -28,13 +29,14 @@ SECURITE -- barrieres INDEPENDANTES du bon vouloir du LLM :
     ecrit le SQL (barriere deja en place dans tools.py). Tout argument venu
     du LLM (tagname, order, intent) est VALIDE avant d'atteindre les outils
     -- jamais de confiance aveugle sur une sortie de LLM.
-  - Anti-invention : si aucun outil n'a renvoye de donnees dans le tour ET
-    que la reponse du LLM contient un chiffre colle a une unite nutritionnelle
-    (mg, g, kcal...), la reponse est BLOQUEE cote code et remplacee par un
-    message honnete -- observe en pratique (le LLM a invente des valeurs pour
-    un aliment absent de la base, signees "FAO/INFOODS WAFCT 2019"). Limite
-    connue : ne detecte que l'invention CHIFFREE, pas une affirmation
-    qualitative sans nombre (cf. docs/limitations.md).
+  - Anti-invention : si au moins un outil a ete appele dans le tour et
+    qu'AUCUN n'a renvoye de donnees exploitables, la reponse est BLOQUEE cote
+    code -- quel que soit son contenu (chiffre invente ou recit sans rapport
+    avec les donnees, observes tous les deux en pratique). Si aucun outil
+    n'a ete appele du tout, seul un chiffre colle a une unite nutritionnelle
+    est detecte et bloque. Limite connue restante : une affirmation
+    qualitative inventee SANS chiffre ET sans appel d'outil n'est pas
+    attrapee (cf. docs/limitations.md).
   - Conseil medical/dietetique prescriptif ("vous pouvez manger", "evitez") :
     UNIQUEMENT attenue par le system prompt pour l'instant, pas de barriere
     code. Faille CONNUE, non entierement reglee -- cf. docs/limitations.md.
@@ -55,6 +57,7 @@ from nutrition_kb.agent.execute import ExecutionResult, resolve_unit
 from nutrition_kb.agent.render import render_response
 from nutrition_kb.agent.tools import KNOWN_INTENTS, UnknownIntentError, query_sql, search_vector
 from nutrition_kb.db import DSN
+from nutrition_kb.disease.search import search_disease_info
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +175,30 @@ def _build_tools() -> list:
                 },
             },
         },
+        {
+            "type": "function",
+            "function": {
+                "name": "search_disease_info",
+                "description": (
+                    "Pour COMPRENDRE une maladie (diabète, hypertension) — sa définition, ses "
+                    "symptômes, ses facteurs de risque, sa prévention, comment elle se traite en "
+                    "général. À utiliser pour les questions sur la MALADIE elle-même. NE PAS "
+                    "utiliser pour la composition nutritionnelle d'un aliment (utiliser "
+                    "search_vector ou query_sql pour ça)."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "disease": {
+                            "type": "string",
+                            "enum": ["diabete", "hypertension"],
+                            "description": "optionnel : restreint la recherche a une maladie precise",
+                        },
+                    },
+                    "required": [],
+                },
+            },
+        },
     ]
 
 
@@ -181,15 +208,15 @@ def _build_tools() -> list:
 # search_vector.
 #
 # PRINCIPE : le LLM ne genere que ce qu'il est SEUL a pouvoir decider (quel
-# outil, tagname, order, angle). Un argument deja disponible en clair --la
-# question de l'utilisateur-- lui est fourni tout fait, jamais regenere : un
-# modele de 8B peut reformuler ou tronquer un texte qu'il recopie (observe en
-# pratique : "le soumbala, c'" au lieu de la question complete), et la
-# recherche e5 est calibree pour matcher la question ORIGINALE contre les
-# chunks -- une paraphrase n'apporte rien et ajoute un maillon non
-# deterministe pour rien. D'ou original_question, ignoré nulle part ailleurs
-# que pour search_vector : query_sql n'a pas ce probleme, tagname/order sont
-# des choix que SEUL le LLM peut faire.
+# outil, tagname, order, angle, disease). Un argument deja disponible en
+# clair --la question de l'utilisateur-- lui est fourni tout fait, jamais
+# regenere : un modele de 8B peut reformuler ou tronquer un texte qu'il
+# recopie (observe en pratique : "le soumbala, c'" au lieu de la question
+# complete), et la recherche e5 est calibree pour matcher la question
+# ORIGINALE contre les chunks -- une paraphrase n'apporte rien et ajoute un
+# maillon non deterministe pour rien. D'ou original_question, utilise pour
+# search_vector ET search_disease_info (meme correctif) : query_sql n'a pas
+# ce probleme, tagname/order sont des choix que SEUL le LLM peut faire.
 # ---------------------------------------------------------------------------
 
 def execute_tool_call(name: str, arguments: dict, original_question: str) -> dict:
@@ -230,24 +257,46 @@ def execute_tool_call(name: str, arguments: dict, original_question: str) -> dic
             return {"error": f"intention inconnue : {intent!r} -- outil indisponible pour cette intention"}
         return {"rows": [asdict(r) for r in rows]}
 
+    if name == "search_disease_info":
+        # Meme tolerance que 'angle' sur search_vector : toute valeur hors
+        # des maladies connues degrade vers "pas de filtre" (recherche sur
+        # diabete ET hypertension), jamais un blocage.
+        disease = arguments.get("disease")
+        if disease not in ("diabete", "hypertension"):
+            disease = None
+        hits = search_disease_info(original_question, disease=disease)
+        return {"hits": [asdict(h) for h in hits]}
+
     return {"error": f"outil inconnu : {name!r}"}
 
 
 # ---------------------------------------------------------------------------
 # Garde-fou anti-invention -- CODE, pas juste prompt : observe en pratique,
-# quand search_vector echoue (zero resultat), le LLM peut inventer des
+# quand un outil echoue (zero resultat), le LLM peut soit inventer des
 # chiffres et les attribuer a "la base FAO/INFOODS WAFCT 2019" (invention
-# signee de notre source, critique). Le prompt seul ne suffit pas a
-# l'empecher de facon fiable -- verifie en test reel.
+# signee de notre source, critique), SOIT -- observe ensuite, sur une
+# question hors-sujet ("raconte-moi ta journee") -- improviser un recit
+# entier sans aucun chiffre ("j'ai recu trois demandes aujourd'hui...").
+# Le prompt seul ne suffit pas a empecher ni l'un ni l'autre de facon
+# fiable -- verifie en test reel dans les deux cas (le second, sur 7
+# essais, 6 fois sur 7).
 #
-# Regle : si la reponse contient un CHIFFRE colle a une UNITE nutritionnelle
-# ET qu'aucun outil n'a renvoye de donnees dans ce tour -> la reponse est
-# bloquee et remplacee par un message honnete.
+# Deux regles, dans cet ordre :
+#   1. Au moins UN outil a ete appele dans ce tour ET AUCUN n'a renvoye de
+#      donnees exploitables (tous vides ou en erreur) -> la reponse est
+#      bloquee, QUEL QUE SOIT SON CONTENU (chiffre invente ou pur recit).
+#      Rien ne justifie de faire confiance a un texte construit sur zero
+#      donnee, qu'il "ait l'air" invente ou non.
+#   2. AUCUN outil n'a ete appele du tout, MAIS la reponse contient quand
+#      meme un chiffre colle a une unite nutritionnelle (le LLM a invente
+#      sans meme essayer un outil) -> bloquee aussi.
 #
-# LIMITE CONNUE (cf. docs/limitations.md) : ne detecte QUE l'invention
-# CHIFFREE. Une affirmation qualitative inventee sans valeur ("le quinoa est
-# riche en fer", sans nombre) n'est PAS attrapee -- probleme d'ancrage plus
-# general, non resoluble simplement par une regex. Assume pour l'instant.
+# LIMITE CONNUE restante (cf. docs/limitations.md) : si le LLM n'appelle
+# AUCUN outil et invente une affirmation QUALITATIVE sans chiffre ("le
+# quinoa est traditionnel au Burkina Faso", faux, sans nombre), rien ne
+# l'attrape -- probleme d'ancrage general, non resoluble simplement par une
+# regex. Rétréci par cette extension (le cas "outil appele, zero donnee"
+# est maintenant couvert quel que soit le contenu), pas élimine.
 # ---------------------------------------------------------------------------
 
 _NUTRITION_UNITS = r"(?:kcal|kj|kg|mcg|mg|µg|g|%)"
@@ -257,9 +306,10 @@ _NUTRITION_VALUE_RE = re.compile(
 )
 
 FABRICATION_FALLBACK = (
-    "Je n'ai pas d'information fiable sur cet aliment dans ma base de données. "
-    "Il n'y figure peut-être pas encore. Je préfère ne rien affirmer plutôt que "
-    "de vous donner un chiffre incertain."
+    "Je n'ai pas d'information fiable sur ce sujet dans ma base de données. "
+    "Peux-tu reformuler ta question, par exemple en citant un aliment ou une "
+    "maladie précis ? Je préfère ne rien affirmer plutôt que de vous donner "
+    "une information incertaine."
 )
 
 
@@ -272,6 +322,13 @@ def _trace_has_data(trace: list) -> bool:
 def _looks_fabricated(response_text: str, trace: list) -> bool:
     if _trace_has_data(trace):
         return False
+    if trace:
+        # Au moins un outil a ete appele, aucun n'a renvoye de donnees --
+        # on ne fait JAMAIS confiance au texte dans ce cas, qu'il contienne
+        # un chiffre invente ou un recit sans rapport avec les donnees.
+        return True
+    # Aucun outil appele du tout : on ne bloque que le cas restant detectable
+    # simplement -- un chiffre nutritionnel invente sans meme avoir essaye.
     return bool(_NUTRITION_VALUE_RE.search(response_text))
 
 
