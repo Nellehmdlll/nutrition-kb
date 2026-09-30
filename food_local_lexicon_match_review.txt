@@ -1,0 +1,114 @@
+Tri automatique de kb.food_local_lexicon contre kb.food -- 37 terme(s)
+PROPOSITION UNIQUEMENT -- rien n'est ecrit en base. A valider a la main.
+==============================================================================
+
+APPARIE_AUTO : 12
+AMBIGU       : 1
+NON_APPARIE  : 24
+
+==============================================================================
+APPARIE_AUTO (12) -- candidats trouves, A VALIDER
+==============================================================================
+
+'chenilles'  (mots cherches : chenilles)
+    07_026  Chenille de bambou, frite, salée
+    07_056  Chenille du mopane, en conserve
+    07_136  Chenille du mopane frite avec légumes (Burkina Faso)*
+
+'feuilles de baobab'  (mots cherches : feuilles, baobab)
+    04_001  Baobab, feuilles, fraîches, crues
+    04_002  Baobab, feuilles, séchées
+    04_025  Baobab, feuilles, fraîches, bouillies* (sans sel), égouttées
+    04_087  Baobab, feuilles, fraîches, bouillies* (ingrédient de recette)
+    14_020  Toeg koing zéédo (Burkina Faso)*: sauce de feuilles de baobab séchées avec poisson, légumes et néré fermenté (soumbala)
+    14_022  Toeg maas zéédo (Burkina Faso)*: sauce de feuilles de baobab fraîches avec poisson, légumes et néré fermenté (soumbala)
+
+'feuilles de gombo'  (mots cherches : feuilles, gombo)
+    04_004  Gombo, feuilles, fraîches, crues
+    04_041  Gombo, feuilles, fraîches, bouillies* (sans sel), égouttées
+    04_110  Gombo, feuilles, fraîches, bouillies* (ingrédient de recette)
+
+'feuilles de manioc'  (mots cherches : feuilles, manioc)
+    04_008  Manioc, feuilles, fraîches, crues
+    04_028  Manioc, feuilles, fraîches, bouillies* (sans sel), égouttées
+    04_092  Manioc, feuilles, fraîches, bouillies* (ingrédient de recette)
+    14_025  Banakou vand zéédo (Burkina Faso)*: sauce de feuilles de manioc avec poisson, légumes et huile de palme rouge
+
+'feuilles de niebe'  (mots cherches : feuilles, niebe)
+    01_180  Gnon (Burkina Faso)*: boules de feuilles de niébé cuites à la vapeur, avec farine d’arachide, potasse et mil à chandelle
+    01_181  Kiou gonré (Burkina Faso)*: boules de fornio cuites à la vapeur, feuilles de niébé, farine d´arachide et potasse
+    04_010  Niébé, feuilles, fraîches, crues
+    04_030  Niébé, feuilles, fraîches, bouillies* (sans sel), égouttées
+    04_031  Niébé, feuilles, séchées
+    04_098  Niébé, feuilles, fraîches, bouillies* (ingrédient de recette)
+    14_029  Bengedo (Burkina Faso)*: sauce de feuilles de niébé avec poisson, légumes, pâte d’arachide et néré fermenté (soumbala)
+
+'feuilles de patate douce'  (mots cherches : feuilles, patate, douce)
+    04_059  Patate douce, feuilles, fraîches, crues
+    04_060  Patate douce, feuilles, fraîches, bouillies* (sans sel), égouttées
+    04_121  Patate douce, feuilles, fraîches, bouillies* (ingrédient de recette)
+    14_009  Nayoungn vand zindo (Burkina Faso)*: sauce de feuilles de patate douce avec poisson, huile de palme rouge et légumes
+
+'feuilles de tamarin'  (mots cherches : feuilles, tamarin)
+    04_019  Tamarin, feuilles, fraîches, crues
+    04_061  Tamarin, feuilles, fraîches, bouillies* (sans sel), égouttées
+    04_062  Tamarin, feuilles, séchées
+    04_122  Tamarin, feuilles, fraîches, bouillies* (ingrédient de recette)
+
+'graine de courge'  (mots cherches : graine, courge)
+    06_038  Graines de courge, séchées, crues
+
+'graine d'oseille'  (mots cherches : graine, oseille)
+    06_030  Graines d’oseille de Guinée (datou), rouges, séchées, crues
+
+'noix de karite'  (mots cherches : noix, karite)
+    05_044  Noix de karité, crue
+    06_016  Karité, noix, séchée, crue
+
+'sauterelle'  (mots cherches : sauterelle)
+    07_074  Sauterelle, frais, crue
+    07_075  Sauterelle, séchée, crue
+    07_076  Sauterelle (katydid), crue
+
+'souma'  (mots cherches : souma)
+    01_169  Wèsln né souma (Burkina Faso)*: couscous de maïs jaune avec pois bambara
+
+==============================================================================
+AMBIGU (1) -- trop de candidats (> 10), a examiner
+==============================================================================
+
+'soumbala'  (mots cherches : soumbala) -- 12 candidats
+    03_042  Néré, fermenté (soumbala)
+    14_003  Éindo tomate ne ziim zéindo (Burkina Faso)*: sauce avec poisson, tomate et néré fermenté (soumbala)
+    14_006  Siikam zéédo (Burkina Faso)*: sauce d’arachide avec poisson, légumes et néré fermenté (soumbala)
+    14_014  Bite zindo (Burkina Faso)*: sauce de feuilles d’oseille de Guinée avec poisson, néré fermenté (soumbala) et tomates
+    14_017  Maân koèg zéindo-2 (Burkina Faso)*: sauce gombo séché avec agneau, légumes et néré fermenté (soumbala)
+    ... et 7 autre(s)
+
+==============================================================================
+NON_APPARIE (24) -- glose manuelle, ou aliment absent de la WAFCT
+==============================================================================
+'amande de balanite'  (mots cherches : amande, balanite)
+'amande de karite'  (mots cherches : amande, karite)
+'arzantiga'  (mots cherches : arzantiga)
+'benga'  (mots cherches : benga)
+'bikalga'  (mots cherches : bikalga)
+'bulvaka'  (mots cherches : bulvaka)
+'calice de kapok'  (mots cherches : calice, kapok)
+'dolo'  (mots cherches : dolo)
+'fleurs de kapok'  (mots cherches : fleurs, kapok)
+'fruit de balanite'  (mots cherches : fruit, balanite)
+'fruit de detarium'  (mots cherches : fruit, detarium)
+'fruit de lannea'  (mots cherches : fruit, lannea)
+'gomme arabique'  (mots cherches : gomme, arabique)
+'huile de balanite'  (mots cherches : huile, balanite)
+'jus de canne'  (mots cherches : jus, canne)
+'jus de detar'  (mots cherches : jus, detar)
+'jus de tamarin'  (mots cherches : jus, tamarin)
+'kagha'  (mots cherches : kagha)
+'koura-koura'  (mots cherches : koura)
+'poudre de baobab'  (mots cherches : poudre, baobab)
+'pulpe de nere'  (mots cherches : pulpe, nere)
+'scarabe'  (mots cherches : scarabe)
+'voaga'  (mots cherches : voaga)
+'weda'  (mots cherches : weda)
